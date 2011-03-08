@@ -6,15 +6,21 @@ function Board(element) {
     this.element.find('.stack').each(function(){
         var stack = new Stack($(this), self);
         self.stacks.push(stack);
+    })
+    this.element.find('.stack ul').sortable({
+        connectWith: ".stack ul"
     });
 }
 
 function Stack(element, board) {
     var self = this;
     this.board = board;
-    // our stack element
+    
+    // our stack element.
     this.element = element;
-    // owned tickets collection
+    this.name = this.element.attr('id');
+    
+    // owned tickets collection.
     this.tickets = [];
     this.element.find('article').each(function() {
         var ticket = new Ticket($(this), self);
@@ -25,7 +31,6 @@ function Stack(element, board) {
 function Ticket(element, stack) {
     this.element = element;
     this.stack = stack;
-    this.element.draggable({containment: this.stack.board.element});
 }
 
 (function($) {
