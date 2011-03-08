@@ -1,0 +1,9 @@
+body { font-family:Arial; font-size:12pt; padding:20px; width:800px; margin:20px auto; }
+ul { margin:0px; padding:0px; margin-left:20px; }
+#list1, #list2 { width:350px; list-style-type:none; margin:0px; }
+#list1 li, #list2 li { float:left; padding:5px; width:100px; height:100px; }
+#list1 div, #list2 div { width:90px; height:50px; border:solid 1px black; background-color:#E0E0E0; text-align:center; padding-top:40px; }
+#list2 { float:right; }
+.placeHolder div { background-color:white !important; border:dashed 1px gray !important; }
+table { float:right; border-collapse:collapse; }
+td { border: 1px solid gray; padding:5px; }
