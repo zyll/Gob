@@ -33,10 +33,21 @@ function Ticket(element, stack) {
     this.stack = stack;
 }
 
-(function($) {
+Ticket.prototype.add = function(stack) {
+   console.log('me');
 
+};
+
+(function($) {
     $('.board').each(function(){
         new Board($(this));
+    });
+
+    console.log($('#addSticky'));
+    $('#addSticky').bind('click', function(event) {
+        event.preventDefault();
+        console.log('me');
+        $('#tplSticky').show();
     });
 
 })(jQuery);

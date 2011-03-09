@@ -124,3 +124,5 @@ aside ul li { display: inline; }
 							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
 }
 .button.green:hover { 	background-color: hsl(88, 70%, 75%); }
+
+#tplSticky { display: none; }
