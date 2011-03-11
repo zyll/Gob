@@ -1,0 +1,31 @@
+!!! 5
+html(land: "en")
+  head
+    meta(charset: "utf-8")
+    title Board
+    link(href: "/stylesheets/base.css", rel: "stylesheet")
+    script(src: "http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js", type: "text/javascript")
+    script(src: "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.min.js", type: "text/javascript")
+    script(type: "text/javascript", src:"/javascripts/board.js")
+  body
+    header
+      p ScrumBoard : #{name}
+    !{board}
+    section
+      article#tplSticky
+        header
+          h2 Ticket title
+        section
+          p Content ticket
+        footer
+          p User
+    aside
+      ul
+        li
+          a#addSticky.button.pink(href: '#') New stickies
+        li
+          a.button.green(href:'#') Deploy
+        li
+          a#saveBoard.button.green(href='/board/' + name) Save
+    footer
+      p Design by Zyll and Shoko
