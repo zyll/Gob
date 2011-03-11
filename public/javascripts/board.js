@@ -18,14 +18,22 @@ function Stack(element, board) {
     
     // our stack element.
     this.element = element;
+    this.holder = element.find('ul');
     this.name = this.element.attr('id');
     
     // owned tickets collection.
     this.tickets = [];
-    this.element.find('article').each(function() {
-        var ticket = new Ticket($(this), self);
-        self.tickets.push(ticket);
-    });
+    this.element.find('article').each($.proxy(this.add, this));
+}
+
+Stack.prototype.add = function(el) {
+    var ticket = new Ticket(el, $(this));
+    this.tickets.push(ticket);
+    console.log('pouet')
+}
+
+Stack.prototype.append = function(el) {
+    this.add($(el).appendTo(this.holder).attr('id', null));
 }
 
 function Ticket(element, stack) {
@@ -33,21 +41,13 @@ function Ticket(element, stack) {
     this.stack = stack;
 }
 
-Ticket.prototype.add = function(stack) {
-   console.log('me');
 
-};
-
-(function($) {
-    $('.board').each(function(){
-        new Board($(this));
-    });
-
-    console.log($('#addSticky'));
-    $('#addSticky').bind('click', function(event) {
-        event.preventDefault();
-        console.log('me');
-        $('#tplSticky').show();
-    });
-
-})(jQuery);
+$(document).ready( function() {
+    $('.board').each(function() {
+        var board = new Board($(this));
+        $('#addSticky').bind('click', function(event) {
+            event.preventDefault();
+            board.stacks[0].append($('#tplSticky').clone());
+        });
+     });
+});

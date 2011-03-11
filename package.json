@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "connect": "1.0.6",
+    "jade": "0.8.5"
+  },
+  "directories": {
+    "data": "./boards",
+    "template": "./jade",
+    "static": "./public"
+  },
+  "name": "board",
+  "author": "Shaka & Zyll <contact@af83.com>",
+  "version": "0.0.1",
+  "main": "./app.js",
+  "description": "Board to make things done."
+}
