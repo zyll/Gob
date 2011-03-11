@@ -36,7 +36,9 @@ Connect.createServer(
                     res.writeHead(404)
                     res.end()
                 } else {
-                    res.end(data)
+                    jade.renderFile(tpls + '/board.jade', {locals: {name: req.params.id, board: data}}, function(err, html) {
+                       res.end(html)
+                    })
                 }
             })
         })
