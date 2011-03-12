@@ -10,7 +10,9 @@ html(land: "en")
   body
     header
       p ScrumBoard : #{name}
-    !{board}
+    section
+      ul.board
+        !{board}
     section
       article#tplSticky
         header

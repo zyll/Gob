@@ -29,7 +29,7 @@ Connect.createServer(
 
         })
 
-        // A board
+        // Getting a board
         app.get('/board/:id', function(req, res, next) {
             fs.readFile(__dirname + '/boards/'+req.params.id + '/index.html', function(err, data) {
                 if(err) {
@@ -42,12 +42,19 @@ Connect.createServer(
                 }
             })
         })
+
+        // Saving a board.
+        // @todo use the stream luke.
         app.post('/board/:id', function(req, res, next) {
-            fs.writeFile(__dirname + '/boards/' + req.params.id + '/index.html', req.body, function(err) {
-                if(err) {
-                    res.writeHead(404)
-                }
-                res.end()
+            var b = ''
+            req.on('data', function(d) {b += d})
+            req.on('end', function() {
+                fs.writeFile(__dirname + '/boards/' + req.params.id + '/index.html', b, 'utf-8', function(err) {
+                    if(err) {
+                        res.writeHead(404)
+                    }
+                    res.end()
+                })
             })
         })
     }),
