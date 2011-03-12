@@ -12,6 +12,15 @@ function Board(element) {
     });
 }
 
+Board.prototype.save = function(url) {
+    $.ajax({
+        url: url,
+        dataType: 'html',
+        data: this.element.html(),
+        type: 'post'
+    })
+}
+
 function Stack(element, board) {
     var self = this;
     this.board = board;
@@ -48,6 +57,10 @@ $(document).ready( function() {
         $('#addSticky').bind('click', function(event) {
             event.preventDefault();
             board.stacks[0].append($('#tplSticky').clone());
+        });
+        $('#saveBoard').bind('click', function(event) {
+            event.preventDefault();
+            board.save($(this).attr('href'));
         });
      });
 });

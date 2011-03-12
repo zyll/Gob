@@ -42,6 +42,14 @@ Connect.createServer(
                 }
             })
         })
+        app.post('/board/:id', function(req, res, next) {
+            fs.writeFile(__dirname + '/boards/' + req.params.id + '/index.html', req.body, function(err) {
+                if(err) {
+                    res.writeHead(404)
+                }
+                res.end()
+            })
+        })
     }),
     Connect.logger(),
     Connect.static(__dirname + '/public')
