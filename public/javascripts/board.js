@@ -17,7 +17,9 @@ Board.prototype.save = function(url) {
         url: url,
         dataType: 'html',
         data: this.element.html(),
-        type: 'post'
+        type: 'post',
+        processData: false,
+        contentType: 'text/html'
     })
 }
 
