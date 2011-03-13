@@ -6,11 +6,13 @@ var http    = require('http')
   , fs = require('fs')
   , jade = require('jade')
   , Connect = require('connect')
+  , sys = require('sys')
 
 var tpls = __dirname + '/jade'
 
 Connect.createServer(
-    Connect.router(function(app) {
+        Connect.bodyParser(),
+        Connect.router(function(app) {
 
         // Home
         app.get('/', function(req, res, next) {
@@ -27,6 +29,39 @@ Connect.createServer(
                 })
             })
 
+        })
+
+        // Get form to create a board
+        app.get('/board', function(req, res, next) {
+            jade.renderFile(tpls + '/board_form.jade', function(err, html) {
+               res.end(html)
+            })
+        })
+
+        // New board
+        app.post('/board', function(req, res, next) {
+            // new repos
+            fs.mkdir(__dirname + '/boards/' + req.body.name, '766', function(err) {
+                console.log('repos created')
+                // compile an empty board
+                jade.renderFile( tpls + '/board_empty.jade', function(err, html) {
+                    console.log('load empty')
+                    // write the empty board in the new repos
+                    fs.writeFile(__dirname + '/boards/' + req.body.name + '/index.html', html, 'utf-8', function(err) {
+                        console.log('save index')
+                        if(err) {
+                            console.log(err)
+                            res.writeHead(404)
+                        } else {
+                            // return layout + empty board
+                            console.log('render index')
+                            jade.renderFile(tpls + '/board.jade', {locals: {name: req.body.name, board: html}}, function(err, html) {
+                               res.end(html)
+                            })
+                        }
+                    })
+                })
+            })
         })
 
         // Getting a board

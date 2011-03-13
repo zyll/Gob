@@ -1,5 +1,5 @@
 !!! 5
-html(land: "en")
+html(lang: "en")
   head
     meta(charset: "utf-8")
     title Board
@@ -11,7 +11,7 @@ html(land: "en")
     header
       p ScrumBoard : #{name}
     section
-      ul.board
+      ul(contenteditable: 'true').board
         !{board}
     section
       article#tplSticky
