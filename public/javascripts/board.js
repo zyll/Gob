@@ -42,13 +42,14 @@ function Stack(element, board) {
     
     // owned tickets collection.
     this.tickets = [];
-    this.element.find('article').each($.proxy(this.add, this));
+    this.element.find('article').each(function(index, element) {
+        self.add(element);
+    });
 }
 
 Stack.prototype.add = function(el) {
     var ticket = new Ticket(el, $(this));
     this.tickets.push(ticket);
-    console.log('pouet')
 }
 
 Stack.prototype.append = function(el) {
@@ -58,6 +59,12 @@ Stack.prototype.append = function(el) {
 function Ticket(element, stack) {
     this.element = element;
     this.stack = stack;
+    $(this.element).find('.editable').editable(function(value, settings) { 
+        return(value);
+    }, { 
+        type  : 'textarea',
+        submit: 'OK',
+    });
 }
 
 
@@ -77,4 +84,5 @@ $(document).ready( function() {
             board.deploy($(this).attr('href'));
         });
      });
+
 });

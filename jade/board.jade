@@ -4,9 +4,10 @@ html(lang: "en")
     meta(charset: "utf-8")
     title Board
     link(href: "/stylesheets/base.css", rel: "stylesheet")
-    script(src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js", type: "text/javascript")
-    script(src: "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.min.js", type: "text/javascript")
-    script(type: "text/javascript", src:"/javascripts/board.js")
+    script(type: "text/javascript", src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js")
+    script(type: "text/javascript", src: "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.min.js")
+    script(type: "text/javascript", src: "http://www.appelsiini.net/download/jquery.jeditable.js") 
+    script(type: "text/javascript", src: "/javascripts/board.js")
   body
     header
       p ScrumBoard : #{name}
@@ -15,9 +16,9 @@ html(lang: "en")
       !{board}
     section
       article#tplSticky
-        header: h2 Ticket title
-        section: p Content ticket
-        footer: p User
+        header: h2.editable Ticket title
+        section: p.editable Content ticket
+        footer: p.editable User
     aside
       ul
         li: a#addSticky.button.pink(href: '#') New stickies
