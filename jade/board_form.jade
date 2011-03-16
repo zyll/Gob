@@ -5,11 +5,9 @@ html(lang: "en")
     title new Board
     script(src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js", type: "text/javascript")
   body
-    header
-      p New board
+    header: p New board
     section
       form(method: 'post')
         input(type: 'text', name: 'name')
         button(type: 'submit') New
-    footer
-      p Design by Zyll and Shoko
+    footer: p Design by Zyll and Shoko

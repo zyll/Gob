@@ -1,11 +1,9 @@
 !!! 5
 html
-  head
-    title Board
+  head: title Board
   body
     h1 Fligths
     ul
       - each file in files
-        li
-          a(href: '/board/' + file) #{file}
+        li: a(href: '/board/' + file) #{file}
     a(href:'/board') Add

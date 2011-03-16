@@ -7,6 +7,8 @@ var http    = require('http')
   , jade = require('jade')
   , Connect = require('connect')
   , sys = require('sys')
+  , libxml = require('libxmljs')
+  , Board = require('./lib').Board
 
 var tpls = __dirname + '/jade'
 
@@ -40,59 +42,63 @@ Connect.createServer(
 
         // New board
         app.post('/board', function(req, res, next) {
-            // new repos
-            fs.mkdir(__dirname + '/boards/' + req.body.name, '766', function(err) {
-                console.log('repos created')
-                // compile an empty board
-                jade.renderFile( tpls + '/board_empty.jade', function(err, html) {
-                    console.log('load empty')
-                    // write the empty board in the new repos
-                    fs.writeFile(__dirname + '/boards/' + req.body.name + '/index.html', html, 'utf-8', function(err) {
-                        console.log('save index')
-                        if(err) {
-                            console.log(err)
-                            res.writeHead(404)
-                        } else {
-                            // return layout + empty board
-                            console.log('render index')
-                            jade.renderFile(tpls + '/board.jade', {locals: {name: req.body.name, board: html}}, function(err, html) {
-                               res.end(html)
-                            })
-                        }
-                    })
+            new Board(req.body.name)
+                .create(function(err, html) {
+                    if(err) {
+                        console.log(err)
+                        res.writeHead(404)
+                    } else {
+                        // return layout + empty board
+                        jade.renderFile(tpls + '/board.jade', {locals: {name: req.body.name, board: html}}, function(err, html) {
+                            res.end(html)
+                        })
+                    }
                 })
-            })
         })
 
         // Getting a board
         app.get('/board/:id', function(req, res, next) {
-            fs.readFile(__dirname + '/boards/'+req.params.id + '/index.html', function(err, data) {
-                if(err) {
-                    res.writeHead(404)
-                    res.end()
-                } else {
-                    jade.renderFile(tpls + '/board.jade', {locals: {name: req.params.id, board: data}}, function(err, html) {
-                       res.end(html)
-                    })
-                }
-            })
+            new Board(req.params.id)
+                .load(function(err, html) {
+                    if(err) {
+                        res.writeHead(404)
+                        res.end()
+                    } else {
+                        jade.renderFile(tpls + '/board.jade', {locals: {name: req.params.id, board: html}}, function(err, html) {
+                           res.end(html)
+                        })
+                    }
+                })
         })
 
         // Saving a board.
-        // @todo use the stream luke.
         app.post('/board/:id', function(req, res, next) {
-            var b = ''
-            req.on('data', function(d) {b += d})
+            req.on('data', function(d) {xml += d})
             req.on('end', function() {
-                fs.writeFile(__dirname + '/boards/' + req.params.id + '/index.html', b, 'utf-8', function(err) {
+                new Board(req.params.id)
+                    .save(xml, function(err) {
+                        if(err) {
+                            res.writeHead(404)
+                        }
+                        res.end()
+                    })
+            })
+        })
+        
+        // do deploy on a board.
+        app.post('/board/:id/deploy', function(req, res, next) {
+            console.log('wanna deploy' + req.params.id)
+            new Board(req.params.id)
+                .deploy(function(err) {
                     if(err) {
+                        console.log('unable to deploy', req.params.id)
                         res.writeHead(404)
                     }
                     res.end()
                 })
-            })
         })
     }),
+    
     Connect.logger(),
     Connect.static(__dirname + '/public')
 ).listen(3000);

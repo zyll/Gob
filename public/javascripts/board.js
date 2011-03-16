@@ -16,13 +16,21 @@ Board.prototype.save = function(url) {
     $.ajax({
         url: url,
         dataType: 'html',
-        data: this.element.html(),
+        data: this.element.parent().html(),
         type: 'post',
         processData: false,
         contentType: 'text/html'
     })
 }
 
+Board.prototype.deploy = function(url) {
+    $.ajax({
+        url: url,
+        type: 'post',
+        processData: false,
+        contentType: 'text/html'
+    })
+}
 function Stack(element, board) {
     var self = this;
     this.board = board;
@@ -63,6 +71,10 @@ $(document).ready( function() {
         $('#saveBoard').bind('click', function(event) {
             event.preventDefault();
             board.save($(this).attr('href'));
+        });
+        $('#deployBoard').bind('click', function(event) {
+            event.preventDefault();
+            board.deploy($(this).attr('href'));
         });
      });
 });
