@@ -73,6 +73,7 @@ Connect.createServer(
 
         // Saving a board.
         app.post('/board/:id', function(req, res, next) {
+            var xml = ''
             req.on('data', function(d) {xml += d})
             req.on('end', function() {
                 new Board(req.params.id)
