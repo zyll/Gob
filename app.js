@@ -97,6 +97,21 @@ Connect.createServer(
                     res.end()
                 })
         })
+
+        // Getting board release list
+        app.get('/board/:id/deploy', function(req, res, next) {
+            fs.readdir(__dirname + '/boards/' + req.params.id, function(err, files) {
+                var filtered = []
+                files.forEach(function(file) {
+                    if(file.substring(0, 'deployed-'.length) == 'deployed-') {
+                        filtered.push(file)
+                    }
+                })
+                jade.renderFile(tpls + '/deployed.jade', {locals: {name: req.params.id, files: filtered}}, function(err, html) {
+                    res.end(html)
+                })
+            })
+        })
     }),
     
     Connect.logger(),

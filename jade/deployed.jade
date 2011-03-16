@@ -1,0 +1,8 @@
+!!! 5
+html
+  head: title Deployed
+  body
+    h1 #{name} Deployed 
+    ul
+      - each file in files
+        li: a(href: '/board/' + name + '/deployed/' + file) #{file}
