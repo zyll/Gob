@@ -1,5 +1,4 @@
-@import url(http://fonts.googleapis.com/css?family=Droid+Sans:bold+Lobster);
-@import url(http://fonts.googleapis.com/css?family=Lobster);
+@font-face { font-family: 'Rock Salt'; font-style: normal; font-weight: normal; src: local('Rock Salt'), local('RockSalt'), url('http://themes.googleusercontent.com/font?kit=Q94aHXFHGip10K5uxi1jOCZ2oysoEQEeKwjgmXLRnTc') format('truetype'); }
 
 /* Resets */
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, sub, sup, tt, var, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td { margin: 0; padding: 0; border: 0; outline: 0; font-weight: inherit; font-style: inherit; font-family: inherit; text-decoration: none; vertical-align: baseline; list-style-type: none; }
@@ -12,8 +11,12 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 * html .clear-block { height: 1%; }
 .clear-block { display: block; }
 
+/* -webkit-user-select: none;*/
+
 html { height: 100%; }
-body { width: 100%; height: 100%; font-family: Helvetica; background: #e3e3e3; -webkit-user-select: none; -webkit-text-size-adjust: none; }
+body { width: 100%; height: 100%; font-family: Helvetica; background: #ddd; -webkit-text-size-adjust: none; font-family: 'Helvetica Neue Light', arial, serif;
+font-size: 13px; color: #333; }
+
 
 header, nav, aside, section, article { display: block; }
 
@@ -22,23 +25,27 @@ footer { position: fixed; bottom: 0; width: 100%; }
 footer p { text-align: center; }
 
 
-body > header { height: 39px; border-bottom: 1px solid #838a9a; background: #424242 -webkit-gradient(linear, 0 0, 0 100, from(#f4f5f7), to(#999da9));-webkit-border-top-left-radius: 4px; -webkit-border-top-right-radius: 4px; }
+/* header */
+body > header { height: 39px; border-bottom: 1px solid #838a9a; }
 body > header p { color: #717880; font: bold 14px/39px Helvetica; text-align: center; text-shadow: 0 1px 0 #fff; }
 
-body > section { }
-body > section ul.board { display: block; width: 1000px; margin: 0 auto; }
-body > section ul.board > li { display: inline-block; width: 290px; padding: 0 20px; vertical-align: top; }
-body > section ul.board li h1 { text-align: center; }
+
+/* board */
+body > section:first-of-type { width: 90%; min-height: 450px; margin: 0 auto; background: #dcd5d1; border: solid silver 8px; -webkit-box-shadow: inset 1px 1px 3px #999; -moz-box-shadow: inset 1px 1px 3px #999; box-shadow: inset 1px 1px 3px #999; }
+
+body > section ul.board { display: block; width: 100%; margin: 0 auto; }
+body > section ul.board > li { display: inline-block; width: 32.5%; min-height: 480px; vertical-align: top; background: url('/images/green-board-line.png') right 0 repeat-y; }
+body > section ul.board > li:last-child { background: none; }
+body > section ul.board li h1 { text-align: center; font: normal 18px 'Rock Salt', "Arial Rounded MT Bold", arial, serif; color: #5C9DB4; }
 body > section ul.board li ul { padding: 40px 0 70px 0; }
-ul li article { position: relative; width: 250px; min-height: 100px; margin: 25px auto; padding: 60px 15px 15px 15px; background: #fff url('../images/tbKiwiLogo.gif') no-repeat 4px 8px; -webkit-box-shadow: 0 2px 12px rgba(0,0,0,.5); -moz-box-shadow: 0 2px 12px rgba(0,0,0,.5); box-shadow: 0 1px 2px #000; -webkit-transform: rotate(-.5deg); -moz-transform: rotate(-.5deg); -o-transform: rotate(-.5deg); }
+ul li article { position: relative; width: 250px; min-height: 100px; margin: 0; padding: 5px; background: #FFF; -webkit-box-shadow: 0 2px 12px rgba(0,0,0,.5); -moz-box-shadow: 0 2px 12px rgba(0,0,0,.5); box-shadow: 0 1px 2px #000; -webkit-transform: rotate(-.5deg); -moz-transform: rotate(-.5deg); -o-transform: rotate(-.5deg); }
 ul li article:nth-child(even) { -webkit-transform: rotate(.5deg); -moz-transform: rotate(.5deg); }
-ul li article::before { content: ' '; display: block; position: absolute; left: 115px; top: -15px; width: 75px; height: 25px; z-index: 2; background-color: rgba(243,245,228,0.5); border: 2px solid rgba(255,255,255,0.5); -webkit-box-shadow: 0 0 5px #888; -moz-box-shadow: 0 0 5px #888; box-shadow: 2px 2px 2px #000; -webkit-transform: rotate(-6deg); -moz-transform: rotate(-6deg); }
-ul li article:nth-child(even)::before { -webkit-transform: rotate(6deg); -moz-transform: rotate(6deg); }
 
 
-ul li article { -webkit-transform: scale(1); }
+
+ul li article { -webkit-transform: scale(0.7); }
 ul li.ui-sortable-helper article:hover { -webkit-transform: scale(1); z-index: 2000; }
-ul li article:hover { -webkit-transform: scale(1.5); z-index: 2000; }
+/*ul li article:hover { -webkit-transform: scale(1.5); z-index: 2000; }*/
 
 
 
@@ -73,9 +80,9 @@ aside ul li { display: inline; }
 	border-top: 		1px solid rgba(255,255,255,0.8);
 	border-bottom: 		1px solid rgba(0,0,0,0.1);
 	
-	background-image: 	-webkit-gradient(radial, 50% 0, 100, 50% 0, 0, from( rgba(255,255,255,0) ), to( rgba(255,255,255,0.7) )), url(noise.png);
-	background-image: 	-moz-radial-gradient(top, ellipse cover, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%), url(noise.png);
-	background-image: 	gradient(radial, 50% 0, 100, 50% 0, 0, from( rgba(255,255,255,0) ), to( rgba(255,255,255,0.7) )), url(noise.png);
+	background-image: 	-webkit-gradient(radial, 50% 0, 100, 50% 0, 0, from( rgba(255,255,255,0) ), to( rgba(255,255,255,0.7) )), url(/images/noise.png);
+	background-image: 	-moz-radial-gradient(top, ellipse cover, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%), url(/images/noise.png);
+	background-image: 	gradient(radial, 50% 0, 100, 50% 0, 0, from( rgba(255,255,255,0) ), to( rgba(255,255,255,0.7) )), url(/images/noise.png);
 
 	-webkit-transition: background .2s ease-in-out;
 	-moz-transition: 	background .2s ease-in-out;
