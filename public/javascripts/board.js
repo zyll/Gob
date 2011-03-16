@@ -8,27 +8,39 @@ function Board(element) {
         self.stacks.push(stack);
     })
     this.element.find('.stack ul').sortable({
-        connectWith: ".stack ul"
+        connectWith: ".stack ul",
+        receive: function() {
+            self.element.trigger('ticket:move')
+
+        }
     });
 }
 
 Board.prototype.save = function(url) {
+    var self = this;
     $.ajax({
         url: url,
         dataType: 'html',
         data: this.element.parent().html(),
         type: 'post',
         processData: false,
-        contentType: 'text/html'
+        contentType: 'text/html',
+        success: function() {
+            self.element.trigger('board:saved');
+        }
     })
 }
 
 Board.prototype.deploy = function(url) {
+    var self = this;
     $.ajax({
         url: url,
         type: 'post',
         processData: false,
-        contentType: 'text/html'
+        contentType: 'text/html',
+        success: function() {
+            self.element.trigger('board:deployed');
+        }
     })
 }
 function Stack(element, board) {
@@ -37,7 +49,7 @@ function Stack(element, board) {
     
     // our stack element.
     this.element = element;
-    this.holder = element.find('ul');
+    this.holder = this.element.find('ul');
     this.name = this.element.attr('id');
     
     // owned tickets collection.
@@ -54,31 +66,44 @@ Stack.prototype.add = function(el) {
 
 Stack.prototype.append = function(el) {
     this.add($(el).appendTo(this.holder).attr('id', null));
+    this.element.trigger('ticket:new');
 }
 
 function Ticket(element, stack) {
+    var self = this;
     this.element = element;
     this.stack = stack;
-    $(this.element).find('.editable').editable(function(value, settings) { 
+    $(this.element).find('.editable').editable(function(value, settings) {
         return(value);
     }, { 
         type  : 'textarea',
         submit: 'OK',
+        cancel: 'Cancel',
+        callback: function(value, settings) {
+            console.log('I');
+            $(self.element).trigger("ticket:change");
+        }
     });
 }
 
-
 $(document).ready( function() {
     $('.board').each(function() {
+
+        // instanciate the board
         var board = new Board($(this));
+
+        // auto save on ticket change, ticket move or board deployed.
+        board.element.bind('ticket:change ticket:move ticket:new', function() {
+            board.save(location.href);
+        })
+
+        // use template to add new ticket to the first stack
         $('#addSticky').bind('click', function(event) {
             event.preventDefault();
             board.stacks[0].append($('#tplSticky').clone());
         });
-        $('#saveBoard').bind('click', function(event) {
-            event.preventDefault();
-            board.save($(this).attr('href'));
-        });
+
+        // action to deploy the board.
         $('#deployBoard').bind('click', function(event) {
             event.preventDefault();
             board.deploy($(this).attr('href'));
