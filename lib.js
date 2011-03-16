@@ -101,6 +101,7 @@ Board.prototype.deploy = function(cb) {
             stack[0].childNodes().forEach(function(sticky) {
                 sticky.remove()
             })
+            stack[0].node('li')
 
             // update our board
             self.save(xmlDoc.toString(), cb)

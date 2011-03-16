@@ -42,6 +42,7 @@ ul li article { position: relative; width: 250px; min-height: 100px; margin: 0; 
 ul li article:nth-child(even) { -webkit-transform: rotate(.5deg); -moz-transform: rotate(.5deg); }
 
 
+body > section ul.trash { display: inline-block; width: 32.5%; min-height: 480px; vertical-align: top; background: url('/images/green-board-line.png') right 0 repeat-y; }
 
 ul li article { -webkit-transform: scale(0.7); }
 ul li.ui-sortable-helper article:hover { -webkit-transform: scale(1); z-index: 2000; }

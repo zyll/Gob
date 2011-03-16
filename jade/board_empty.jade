@@ -1,5 +1,6 @@
 ul.board
-  - each stack in ['stack', 'todo', 'deploy']
+  - each stack in ['todo', 'progress', 'deploy']
     li.stack(id: stack)
       h1 #{stack}
       ul.ui-sortable
+        li

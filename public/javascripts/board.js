@@ -3,17 +3,29 @@ function Board(element) {
     var self = this;
     this.element = element;
     this.stacks = [];
-    this.element.find('.stack').each(function(){
+    this.element.find('.stack').each(function() {
         var stack = new Stack($(this), self);
-        self.stacks.push(stack);
-    })
-    this.element.find('.stack ul').sortable({
-        connectWith: ".stack ul",
-        receive: function() {
-            self.element.trigger('ticket:move')
+        self.addStack(stack);
+    });
+}
 
+Board.prototype.connectStack = function() {
+    var self = this;
+    var res = []
+    $.each(this.stacks, function(index, stack) {
+        res.push(stack.holder[0]);
+    });
+    console.log(res);
+    $(res).sortable({
+        connectWith: res,
+        receive: function() {
+            self.element.trigger('ticket:move');
         }
     });
+}
+
+Board.prototype.addStack = function(stack) {
+    this.stacks.push(stack);
 }
 
 Board.prototype.save = function(url) {
@@ -28,7 +40,7 @@ Board.prototype.save = function(url) {
         success: function() {
             self.element.trigger('board:saved');
         }
-    })
+    });
 }
 
 Board.prototype.deploy = function(url) {
@@ -41,8 +53,9 @@ Board.prototype.deploy = function(url) {
         success: function() {
             self.element.trigger('board:deployed');
         }
-    })
+    });
 }
+
 function Stack(element, board) {
     var self = this;
     this.board = board;
@@ -65,7 +78,8 @@ Stack.prototype.add = function(el) {
 }
 
 Stack.prototype.append = function(el) {
-    this.add($(el).appendTo(this.holder).attr('id', null));
+    this.holder.append('<li>');
+    this.add($(el).appendTo(this.holder.find('li:last')[0]).attr('id', null));
     this.element.trigger('ticket:new');
 }
 
@@ -87,16 +101,23 @@ function Ticket(element, stack) {
 }
 
 $(document).ready( function() {
-    $('.board').each(function() {
+    
+    // Trash stack
 
+    $('.board').each(function() {
+        
         // instanciate the board
         var board = new Board($(this));
 
         // auto save on ticket change, ticket move or board deployed.
-        board.element.bind('ticket:change ticket:move ticket:new', function() {
+        board.element.bind('ticket:change ticket:move ticket:new ticket:trash', function() {
             board.save(location.href);
-        })
+        });
 
+        var trash = new Stack($("section.trash"), board);
+        board.addStack(trash);
+
+        board.connectStack();
         // use template to add new ticket to the first stack
         $('#addSticky').bind('click', function(event) {
             event.preventDefault();
