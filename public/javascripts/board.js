@@ -102,16 +102,26 @@ function Ticket(element, stack) {
 
 $(document).ready( function() {
     
-    // Trash stack
+    var socket = new io.Socket();
+    socket.connect();
+    socket.on('connect', function() {
+    })
+    socket.on('message', function(data) {console.log(data)})
+    socket.on('disconnect', function(){console.log('disconnet')})
 
     $('.board').each(function() {
-        
+
         // instanciate the board
         var board = new Board($(this));
 
+        board.name = location.href.split('/').pop()
+        
+        socket.send({board: board.name})
+
         // auto save on ticket change, ticket move or board deployed.
         board.element.bind('ticket:change ticket:move ticket:new ticket:trash', function() {
-            board.save(location.href);
+            board.save('/board/' + board.name);
+            
         });
 
         var trash = new Stack($("section.trash"), board);

@@ -8,11 +8,29 @@ var http    = require('http')
   , Connect = require('connect')
   , sys = require('sys')
   , libxml = require('libxmljs')
-  , Board = require('./lib').Board
+  , libBoard = require('./lib')
+  , io = require('socket.io')
+  , BoardsFactory = libBoard.BoardsFactory
+  , Board = libBoard.Board
+
+    require("socket.io-connect");
 
 var tpls = __dirname + '/jade'
 
-Connect.createServer(
+var boards = new BoardsFactory(__dirname + '/boards', function(err) {
+    if(err) {
+        console.log(err)
+    } else {
+        for(var i in boards.boards) {
+            console.log('board ' + boards.boards[i].name + ' loaded')
+        }
+    }
+})
+boards.on('board:save', function(data) {
+    console.log('me')
+})
+
+var server = Connect.createServer(
         Connect.bodyParser(),
         Connect.router(function(app) {
 
@@ -26,7 +44,7 @@ Connect.createServer(
         // Boards list
         app.get('/boards', function(req, res, next) {
             fs.readdir(__dirname + '/boards', function(err, files) {
-                jade.renderFile(tpls + '/boards.jade', {locals: {files: files}}, function(err, html) {
+                jade.renderFile(tpls + '/boards.jade', {locals: {boards: boards.all()}}, function(err, html) {
                    res.end(html)
                 })
             })
@@ -42,61 +60,73 @@ Connect.createServer(
 
         // New board
         app.post('/board', function(req, res, next) {
-            new Board(req.body.name)
-                .create(function(err, html) {
+            if(board.find(req.body.name)) {
+                    res.writeHead(404)
+                    res.send("already exist")
+            } else {
+                var board = boards.add(req.body.name)
+                board.create(function(err) {
                     if(err) {
-                        console.log(err)
                         res.writeHead(404)
                     } else {
                         // return layout + empty board
-                        jade.renderFile(tpls + '/board.jade', {locals: {name: req.body.name, board: html}}, function(err, html) {
+                        jade.renderFile(tpls + '/board.jade', {locals: {board: board}}, function(err, html) {
                             res.end(html)
                         })
                     }
                 })
+            }
         })
 
         // Getting a board
         app.get('/board/:id', function(req, res, next) {
-            new Board(req.params.id)
-                .load(function(err, html) {
-                    if(err) {
-                        res.writeHead(404)
-                        res.end()
-                    } else {
-                        jade.renderFile(tpls + '/board.jade', {locals: {name: req.params.id, board: html}}, function(err, html) {
-                           res.end(html)
-                        })
-                    }
+            var board = boards.find(req.params.id)
+            if(!board) {
+                res.writeHead(404)
+                res.end()
+            } else {
+                jade.renderFile(tpls + '/board.jade', {locals: {board: board}}, function(err, html) {
+                   res.end(html)
                 })
+            }
         })
 
         // Saving a board.
         app.post('/board/:id', function(req, res, next) {
-            var xml = ''
-            req.on('data', function(d) {xml += d})
-            req.on('end', function() {
-                new Board(req.params.id)
-                    .save(xml, function(err) {
+            var board = boards.find(req.params.id)
+            if(board) {
+                var xml = ''
+                req.on('data', function(d) {xml += d})
+                req.on('end', function() {
+                    board.save(xml, function(err) {
                         if(err) {
                             res.writeHead(404)
                         }
                         res.end()
                     })
-            })
+                })
+            } else {
+                res.writeHead(404)
+                res.end()
+            }
         })
         
         // do deploy on a board.
         app.post('/board/:id/deploy', function(req, res, next) {
             console.log('wanna deploy' + req.params.id)
-            new Board(req.params.id)
-                .deploy(function(err) {
+            var board = boards.find(req.params.id)
+            if(board) {
+                board.deploy(function(err) {
                     if(err) {
                         console.log('unable to deploy', req.params.id)
                         res.writeHead(404)
                     }
                     res.end()
                 })
+            } else {
+                res.writeHead(404)
+                res.end()
+            }
         })
 
         // Getting board release list
@@ -117,6 +147,42 @@ Connect.createServer(
     
     Connect.logger(),
     Connect.static(__dirname + '/public')
-).listen(3000);
+)
+server.listen(3000);
+
+var socket = io.listen(server);
+socket.on('connection', socket.prefixWithMiddleware( function (client, req, res) {
+
+    var listen_board = null
+    listen_func = null
+
+    client.on('message', function(message){
+        console.log('board name: ', message.board);
+        if(message.board && listen_board != message.board) {
+            // client wanna be notify on a board events
+            listen_board = message.board
+            if(listen_func) {
+                boards.removeListener('board:save', listen_func)
+            }
+            listen_func = function(board) {
+                console.log("a board was save ", board)
+                if(board.name == listen_board) {
+                    console.log("good board, notify client")
+                    client.send({change: true})
+                }
+            }
+            boards.on('board:save', listen_func)
+        }
+    });
+
+    client.on('disconnect', function(){
+        var listen_board = null
+        if(listen_func) {
+            boards.removeListener('board:save', listen_func)
+        }
+        listen_func = null
+        console.log('disconnect')
+    });
+}));
 
 console.log('up and ready on http://localhost:3000')

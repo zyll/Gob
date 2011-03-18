@@ -4,6 +4,6 @@ html
   body
     h1 Fligths
     ul
-      - each file in files
-        li: a(href: '/board/' + file) #{file}
+      - each board in boards
+        li: a(href: '/board/' + board.name) #{board.name}
     a(href:'/board') Add
