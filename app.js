@@ -157,17 +157,13 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
     listen_func = null
 
     client.on('message', function(message){
-        console.log('board name: ', message.board);
         if(message.board && listen_board != message.board) {
-            // client wanna be notify on a board events
             listen_board = message.board
             if(listen_func) {
                 boards.removeListener('board:save', listen_func)
             }
             listen_func = function(board) {
-                console.log("a board was save ", board)
                 if(board.name == listen_board) {
-                    console.log("good board, notify client")
                     client.send({change: true})
                 }
             }

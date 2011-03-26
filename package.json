@@ -2,6 +2,7 @@
   "dependencies": {
     "connect": "1.0.6",
     "jade": "0.9.1",
+    "cradle": "0.5.5",
     "libxmljs": "0.4.1",
     "socket.io-connect": "0.2.0"
   },

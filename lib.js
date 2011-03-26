@@ -1,158 +1,294 @@
 /**
  *
-*/
-// Required system libraries
+ */
 var fs = require('fs')
   , jade = require('jade')
   , sys = require('sys')
-  , libxml = require('libxmljs')
   , events = require('events')
-
-var tpls = __dirname + '/jade'
-
-var BoardsFactory = function(dir, cb) {
+  , cradle = require('cradle')
+  
+/**
+ * Main handler to all boards.
+ * @param {Object} conf hash (name ) or db
+ * @return self
+ * sync
+ */
+var Boards = function(db, cb) {
     events.EventEmitter.call(this);
-    this.dir = dir
+    this.db = db
+    this.init(cb)
+}
+sys.inherits(Boards, events.EventEmitter)
+
+Boards.client = function(conf) {
+    return new(cradle.Connection)().database(conf.name)
+}
+
+Boards.prototype.init = function(cb) {
     var self = this
-    this.boards = {}
-    var todo = 0
-    fs.readdir(this.dir, function(err, files) {
-        todo = files.length
-        files.forEach(function(file) {
-            fs.stat(self.dir + '/' + file, function(err, stat) {
-                if(!err && stat.isDirectory()) {
-                    var board = new Board(file)
-                    board.dir = self.dir + '/' 
-                    board.load(function(err) {
-                        if(!err) {
-                            self.register(board)
-                        } else {
-                            console.log(err)
-                        }
-                        todo--
-                        if(todo < 1) {
-                            cb(null)
-                        }
-                    })
-                } else {
-                    todo--
-                    if(todo < 1) {
-                        cb(null)
-                    }
+    this.db.exists(function(err, res) {
+        if(!res) {
+            var todo = 3 
+            var done = function(err) {
+                if(--todo == 0) {
+                    cb(null, self)
                 }
+            }
+            self.db.create(function(err) {
+                self.db.save('_design/boards', {
+                    all: {
+                        map: function (doc) {
+                            if (doc.type == 'board' && doc.name) {
+                                emit({
+                                    name: doc.name
+                                }, doc)
+                            }
+                        }
+                    }
+                }, done)
+                self.db.save('_design/stacks', {
+                    all: {
+                        map: function (doc) {
+                            if (doc.type == 'stack' && doc.name && doc.board) {
+                                emit({
+                                    name: doc.name,
+                                    board: doc.board
+                                }, doc)
+                            };
+                        }
+                    }
+                }, done)
+                self.db.save('_design/stickies', {
+                    all: {
+                        map: function (doc) {
+                            if (doc.type == 'sticky' && doc.title && doc.stack) {
+                                emit({
+                                    title: doc.title,
+                                    stack: doc.stack
+                                }, doc)
+                            };
+                        }
+                    }
+                }, done)
             })
-        })
-        if(err || todo < 1) {
-            console.log('dir  empty or err', todo)
-            cb(null)
+        } else {
+            cb(null, self)
         }
     })
 }
-sys.inherits(BoardsFactory,events.EventEmitter)
 
-BoardsFactory.prototype.register = function(board) {
-    var self = this
-    board.dir = self.dir + '/'
-    board.on("save", function(board) {
-        console.log('factory received a save from' + board.name)
-        self.emit("board:save", board)
-    })
-    this.boards[board.name] = board
-    return board
-}
-
-BoardsFactory.prototype.add = function(name) {
-    return this.boards[name] || this.register(new Board(name))
-}
-
-BoardsFactory.prototype.all = function() {
-    return this.boards
-}
-
-BoardsFactory.prototype.find = function(name) {
-    return this.boards[name]
-}
 /**
- * Persistence for Board.
- * You should use BoardsFactory in place of using new Board.
- * @todo be awar about repos exist.
- * @todo security need some check on realpath
+ * Set the boards list or a board
+ * @param {Board} the board to add
  */
-var Board = function(name) {
+Boards.prototype.add = function(board) {
+    board.boards = this
+    return this
+}
+
+/**
+ * get the boards list
+ * @param {Function} called on result with err and res args
+ */
+Boards.prototype.all = function(cb) {
+    var self = this
+    this.db.view('boards/all', function(err, res) {
+        if(res.length == 0) {
+            cb(err, res)
+        } else {
+            cb(err, res.map(function(board) {
+                return new Board(self.db, board)
+            }))
+        }
+    })
+}
+
+/**
+ * @todo return an array
+ */
+Boards.prototype.get = function(key, cb) {
+    var self = this
+    this.db.view('boards/all', {key: key}, function(err, res) {
+        var b = new Board(self.db, res[0].value)
+        b.boards = self
+        cb(err, b)
+    })
+}
+
+
+/**
+ * a Board.
+ * @param [String] board name
+ * @return self
+ */
+var Board = function(db, data) {
     events.EventEmitter.call(this);
-    this.name = name
-    this.data = null
+    this.name = data.name
+    this.id = data._id || null
+    this.rev = data._rev || null
+    this.db = db
 }
 sys.inherits(Board, events.EventEmitter)
-
-/**
- * load persisted data.
- * @params {Function(err, data)} callback on complete
- */
-Board.prototype.load = function(cb) {
+ 
+Board.prototype.get = function(key, cb) {
     var self = this
-    fs.readFile(this.dir + this.name + '/index.html', 'utf-8', function(err, data) {
-        if(err) {
-            cb(err)
+    key.board = {name: this.name}
+    this.db.view('stacks/all',
+                 {key: key},
+                 function(err, res) {
+        if(err || res.length == 0) {
+            cb(err, res)
         } else {
-            self.setData(data)
-            cb(err, data)
+            cb(err, res.map(function(stack) {
+                return new Stack(self.db, stack)
+            }))
         }
     })
 }
 
-Board.prototype.setData = function(data) {
-    this.data = data
+Board.prototype.add = function(stack) {
+    stack.board = this
+    return this
 }
 
-/**
+/** 
  * save board data.
  * @params {Function(err)} callback on complete
+ * @todo dont save stack if it already has an id
  */
-Board.prototype.save = function(html, cb) {
+Board.prototype.save = function(cb) {
     var self = this
-    fs.writeFile( this.dir + this.name + '/index.html', html, 'utf-8', function(err) {
-        if(err) {
-            cb(err)
-        } else {
-            console.log(html)
-            self.setData(html)
-            self.emit("save", self)
-            cb(err, html)
-        }
-    })
+    var data = {
+        type: 'board',
+        name: this.name
+    } 
+    if(this.id) {
+        this.db.save(this.id, data, function(err, res) {
+            cb(err, self)
+        })
+    } else {
+        this.db.save(data, function(err, res) {
+            if(!err) {
+                self.id = res.id
+            }
+            cb(err, self)
+        })
+    }
+}
+
+Board.prototype.include = function() {
+    return {name: this.name}
 }
 
 /**
- * write a new initialized board.
- * @params {Function(err, data)} callback on complete
+ * a Stack.
+ * @param [String] stack name
+ * @return self
  */
-Board.prototype.create = function(cb) {
+var Stack = function(db, data) {
+    events.EventEmitter.call(this);
+    this.db = db
+    this.name = data.name
+    this.id = data._id || null
+    this.rev = data._rev || null
+    this.board = typeof(data.board) == 'object' ? new  Board(db, data.board) : data.board
+}
+sys.inherits(Stack, events.EventEmitter)
+
+Stack.prototype.add = function(sticky) {
+    sticky.stack = this
+    return this
+}
+
+Stack.prototype.save = function(cb) {
     var self = this
-    fs.mkdir(this.dir + this.name, '766', function(err) {
-        if(err) {
-            cb(err)
+    var data = {
+        type: 'stack',
+        board: this.board.include(),
+        name: this.name,
+    }
+    if(this.id) {
+        this.db.save(this.id, data, function(err, res) {
+            cb(err, self)
+        })
+    } else {
+        this.db.save(data, function(err, res) {
+            if(!err) {
+                self.id = res.id
+            }
+            cb(err, self)
+        })
+    }
+}
+
+Stack.prototype.include = function() {
+    return {
+        board: this.board.include(),
+        name: this.name,
+    }
+}
+
+Stack.prototype.get = function(key, cb) {
+    var self = this
+    key.stack = this.include()
+    this.db.view('stickies/all',
+                 {key: key},
+                 function(err, res) {
+        if(err || res.length == 0) {
+            cb(err, res)
         } else {
-            // compile an empty board
-            jade.renderFile( tpls + '/board_empty.jade', function(err, html) {
-                if(err) {
-                    cb(err)
-                } else {
-                    // write the empty board in the new repos
-                    self.save(html, function(err) {
-                        cb(err, html)
-                    })
-                }
-            })
+            cb(err, res.map(function(sticky) {
+                return new Sticky(self.db, sticky)
+            }))
         }
     })
+} 
+var Sticky = function(db, data) {
+    events.EventEmitter.call(this);
+    this.db = db
+    this.title = data.title || 'title'
+    this.content = data.content || 'content'
+    this.user = data.user || 'user'
+    this.stack = typeof(data.stack) == 'object' ? new  Stack(db, data.stack) : data.stack
+    this.id = data._id || null
+    this.rev = data._rev || null
+}
+sys.inherits(Sticky, events.EventEmitter)
+
+Sticky.prototype.save = function(cb) {
+    var self = this
+      , data = {
+            type: 'sticky',
+            stack: this.stack.include(),
+            title: this.title,
+            content: this.content,
+            user: this.user}
+    if(this.id) {
+        this.db.save(this.id, data, function(err, res) {
+            cb(err, self)
+        }) 
+    } else {
+        this.db.save(data, function(err, res) {
+            if(!err) {
+                self.id = res.id
+            }
+            cb(err, self)
+        }) 
+    }
+}
+
+Sticky.prototype.remove = function(cb) {
+    if(this.id && this.rev) {
+        this.db.remove(this.id, this.rev, cb)
+    } else {
+        cb(null)
+    }
 }
 
 /**  
  * Purge 'deploy' stack, backup it, save the board
  * @todo be awar about repos exist.
  * @todo test me.
- */
 Board.prototype.deploy = function(cb) {
     var self = this
     var deploy = function(err){
@@ -184,7 +320,9 @@ Board.prototype.deploy = function(cb) {
         deploy(null)
     }
 }
+ */
 
 exports.Board = Board
-
-exports.BoardsFactory = BoardsFactory
+exports.Boards = Boards
+exports.Stack = Stack
+exports.Sticky = Sticky
