@@ -93,11 +93,13 @@ Boards.prototype.add = function(board) {
 Boards.prototype.all = function(cb) {
     var self = this
     this.db.view('boards/all', function(err, res) {
-        if(res.length == 0) {
+        if(err || res.length == 0) {
             cb(err, res)
         } else {
             cb(err, res.map(function(board) {
-                return new Board(self.db, board)
+                var b = new Board(self.db, board)
+                b.boards = self
+                return b
             }))
         }
     })
@@ -109,9 +111,15 @@ Boards.prototype.all = function(cb) {
 Boards.prototype.get = function(key, cb) {
     var self = this
     this.db.view('boards/all', {key: key}, function(err, res) {
-        var b = new Board(self.db, res[0].value)
-        b.boards = self
-        cb(err, b)
+        if(err || res.length == 0) {
+            cb(err, res)
+        } else {
+            cb(err, res.map(function(board) {
+                var b = new Board(self.db, board)
+                b.boards = self
+                return b
+            }))
+        }
     })
 }
 
