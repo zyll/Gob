@@ -92,6 +92,7 @@ vows.describe('A boards db').addBatch({
                                 'when adding a sticky to the stack': {
                                     'topic': function(stacks) {
                                         var sticky = new Sticky(db, {title: 'title',
+                                                                slug: 'title',
                                                                 content: 'content',
                                                                 user: 'user'})
                                                                 stacks[0].add(sticky)
@@ -106,7 +107,7 @@ vows.describe('A boards db').addBatch({
                                     'when get the sticky': {
                                         'topic': function() {
                                             new Stack(db, {name: 'todo', board: {name: 'test'}})
-                                            .get({title: 'title'}, this.callback)
+                                            .get({slug: 'title'}, this.callback)
                                         },
                                         'it should return a stickies list with one sticky': function(err, stickies) {
                                             assert.equal(stickies.length, 1)
@@ -158,7 +159,7 @@ vows.describe('A boards db').addBatch({
                             new Stack(db2, {name: stack, board:{name: board}})
                                 .save(done);
                             ['A', 'B'].forEach(function(sticky) {
-                                new Sticky(db2, {title: sticky+stack+board, stack: {name: stack, board:{name: board}}})
+                                new Sticky(db2, {title: board+stack+sticky, stack: {name: stack, board:{name: board}}})
                                     .save(done)
                             })
                         })
@@ -175,13 +176,34 @@ vows.describe('A boards db').addBatch({
         },
         'when searching for a  board \'test1\'': {
             topic: function(boards) {
-                boards.get({name: 'test1'}, this.callback)
+                boards.get({name: 'test2'}, this.callback)
             },
-            'should be uniq': function(err, board) {
+            'it should be uniq': function(err, board) {
                 assert.isNull(err)
                 assert.equal(board.length, 1)
-                assert.equal(board[0].name, 'test1')
+                assert.equal(board[0].name, 'test2')
+            },
+            'when searching the todo stack': {
+                'topic': function(board) {
+                    board[0].get({name: 'deploy'}, this.callback)
+                },
+                'it should return the todo stack for this board': function(err, stack) {
+                    assert.isNull(err)
+                    assert.equal(stack.length, 1)
+                    assert.equal(stack[0].name, 'deploy')
+                },
+                'when getting the sticky': {
+                    'topic': function(board) {
+                        board[0].get({slug: 'test2deplo1'}, this.callback)
+                    },
+                    'it should return only one sticky': function(err, sticky) {
+                        assert.isNull(err)
+                        assert.equal(sticky.length, 1)
+                        assert.ok(sticky[0].title.match(/^test2deploy[AB]$/))
+                    }
+                }
             }
+
         }
     }
 }).export(module);

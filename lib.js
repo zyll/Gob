@@ -61,9 +61,9 @@ Boards.prototype.init = function(cb) {
                 self.db.save('_design/stickies', {
                     all: {
                         map: function (doc) {
-                            if (doc.type == 'sticky' && doc.title && doc.stack) {
+                            if (doc.type == 'sticky' && doc.slug && doc.stack) {
                                 emit({
-                                    title: doc.title,
+                                    slug: doc.slug,
                                     stack: doc.stack
                                 }, doc)
                             };
@@ -220,6 +220,7 @@ Stack.prototype.save = function(cb) {
             cb(err, self)
         })
     } else {
+        // get the slug
         this.db.save(data, function(err, res) {
             if(!err) {
                 self.id = res.id
@@ -250,10 +251,12 @@ Stack.prototype.get = function(key, cb) {
             }))
         }
     })
-} 
+}
+
 var Sticky = function(db, data) {
     events.EventEmitter.call(this);
     this.db = db
+    this.slug = data.slug || null
     this.title = data.title || 'title'
     this.content = data.content || 'content'
     this.user = data.user || 'user'
@@ -263,11 +266,41 @@ var Sticky = function(db, data) {
 }
 sys.inherits(Sticky, events.EventEmitter)
 
+/**
+ * @todo add a vew to the db and use collation to find possible collision in slug.
+ */
+Sticky.prototype.slugging = function(cb) {
+    self = this
+    var slug = escape(this.title.substring(0, 10))
+    var base_slug = slug
+    var acc = 0
+    var find_it = function() {
+        if(self._in_write_slugging.indexOf(self.stack.name+'/'+slug) >= 0) {
+            slug = base_slug + (++acc)
+            find_it()
+        } else {
+            self._in_write_slugging.push(self.stack.name+'/'+slug)
+            self.stack.get({slug: slug}, function(err, res) {
+                if(res.length > 0) {
+                    delete self._in_write_slugging.indexOf(self.stack.name+'/'+slug)
+                    slug = base_slug + (++acc)
+                    find_it()
+                } else {
+                    cb(slug)
+                }
+            })
+        }
+    }
+    find_it()
+}
+
+Sticky.prototype._in_write_slugging = []
 Sticky.prototype.save = function(cb) {
     var self = this
       , data = {
             type: 'sticky',
             stack: this.stack.include(),
+            slug: this.slug,
             title: this.title,
             content: this.content,
             user: this.user}
@@ -276,12 +309,17 @@ Sticky.prototype.save = function(cb) {
             cb(err, self)
         }) 
     } else {
-        this.db.save(data, function(err, res) {
-            if(!err) {
-                self.id = res.id
-            }
-            cb(err, self)
-        }) 
+        this.slugging(function(slug) {
+            data.slug = slug
+            self.slug = slug
+            self.db.save(data, function(err, res) {
+                if(!err) {
+                    self.id = res.id
+                }
+                delete self._in_write_slugging[self._in_write_slugging.indexOf(data.stack.name+'/'+slug)]
+                cb(err, self)
+            }) 
+        })
     }
 }
 
