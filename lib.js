@@ -46,7 +46,7 @@ Boards.prototype.init = function(cb) {
                         }
                     }
                 }, done)
-                self.db.save('_design/stacks', {
+                self.db.save('_design/stack', {
                     all: {
                         map: function (doc) {
                             if (doc.type == 'stack' && doc.name && doc.board) {
@@ -58,7 +58,16 @@ Boards.prototype.init = function(cb) {
                         }
                     }
                 }, done)
-                self.db.save('_design/stickies', {
+                self.db.save('_design/stacks', {
+                    all: {
+                        map: function (doc) {
+                            if (doc.type == 'stack' && doc.name && doc.board && doc.board.name) {
+                                emit([doc.board.name, doc.name], doc)
+                            };
+                        }
+                    }
+                }, done)
+                self.db.save('_design/sticky', {
                     all: {
                         map: function (doc) {
                             if (doc.type == 'sticky' && doc.slug && doc.stack) {
@@ -70,7 +79,15 @@ Boards.prototype.init = function(cb) {
                         }
                     }
                 }, done)
-            })
+                self.db.save('_design/stickies', {
+                    all: {
+                        map: function (doc) {
+                            if (doc.type == 'sticky' && doc.slug && doc.stack && doc.stack.name && doc.stack.board && doc.stack.board.name) {
+                                emit([doc.stack.board.name, doc.stack.name, doc.slug], doc)
+                            };
+                        }
+                    }
+                }, done)            })
         } else {
             cb(null, self)
         }
@@ -141,8 +158,24 @@ sys.inherits(Board, events.EventEmitter)
 Board.prototype.get = function(key, cb) {
     var self = this
     key.board = {name: this.name}
-    this.db.view('stacks/all',
+    this.db.view('stack/all',
                  {key: key},
+                 function(err, res) {
+        if(err || res.length == 0) {
+            cb(err, res)
+        } else {
+            cb(err, res.map(function(stack) {
+                return new Stack(self.db, stack)
+            }))
+        }
+    })
+}
+
+Board.prototype.all = function(cb) {
+    var self = this
+
+    this.db.view('stacks/all',
+                 {startkey: [this.name], endkey: [this.name, {}]},
                  function(err, res) {
         if(err || res.length == 0) {
             cb(err, res)
@@ -236,11 +269,29 @@ Stack.prototype.include = function() {
         name: this.name,
     }
 }
+Stack.prototype.all = function(cb) {
+    var self = this
+    var startkey = 
+
+    this.db.view('stickies/all',
+                 {startkey: [this.board.name, this.name], endkey: [[this.board.name, this.name, {}]]},
+                 function(err, res) {
+        if(err || res.length == 0) {
+            console.log(err, res)
+            cb(err, res)
+        } else {
+            cb(err, res.map(function(sticky) {
+                return new Sticky(self.db, sticky)
+            }))
+        }
+    })
+}
 
 Stack.prototype.get = function(key, cb) {
     var self = this
     key.stack = this.include()
-    this.db.view('stickies/all',
+    var flat = 
+    this.db.view('sticky/all',
                  {key: key},
                  function(err, res) {
         if(err || res.length == 0) {

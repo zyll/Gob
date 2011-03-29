@@ -193,13 +193,25 @@ vows.describe('A boards db').addBatch({
                     assert.equal(stack[0].name, 'deploy')
                 },
                 'when getting the sticky': {
-                    'topic': function(board) {
-                        board[0].get({slug: 'test2deplo1'}, this.callback)
+                    'topic': function(stack) {
+                        stack[0].get({slug: 'test2deplo1'}, this.callback)
                     },
                     'it should return only one sticky': function(err, sticky) {
                         assert.isNull(err)
                         assert.equal(sticky.length, 1)
                         assert.ok(sticky[0].title.match(/^test2deploy[AB]$/))
+                    }
+                },
+                'when getting all the sticky for test2': {
+                    'topic': function(stack) {
+                        stack[0].all(this.callback)
+                    },
+                    'it should return 6 stickies': function(err, stickies) {
+                        assert.isNull(err)
+                        assert.equal(stickies.length, 6)
+                        stickies.forEach(function(s) {
+                            assert.ok(s.slug.match(/^test2(deplo|todo(A|B)|progr)1?$/))
+                        })
                     }
                 }
             }
