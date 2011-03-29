@@ -7,148 +7,242 @@ var http    = require('http')
   , jade = require('jade')
   , Connect = require('connect')
   , sys = require('sys')
-  , libxml = require('libxmljs')
   , libBoard = require('./lib')
   , io = require('socket.io')
-  , BoardsFactory = libBoard.BoardsFactory
-  , Board = libBoard.Board
+  , Boards = libBoard.Boards
+  , Board  = libBoard.Board
+  , Stack  = libBoard.Stack
+  , Sticky = libBoard.Sticky
 
     require("socket.io-connect");
 
 var tpls = __dirname + '/jade'
+  , db = Boards.client({name: 'dev_boards'})
+  // make it globals (is that a fixme ?)
+  , var boards = null
 
-var boards = new BoardsFactory(__dirname + '/boards', function(err) {
-    if(err) {
-        console.log(err)
-    } else {
-        for(var i in boards.boards) {
-            console.log('board ' + boards.boards[i].name + ' loaded')
-        }
-    }
-})
+  /*
+* @todo rely on an object to catch save event
 boards.on('board:save', function(data) {
     console.log('me')
 })
+*/
 
 var server = Connect.createServer(
         Connect.bodyParser(),
         Connect.router(function(app) {
 
-        // Home
+        /**
+        * Home
+        */
         app.get('/', function(req, res, next) {
             jade.renderFile(tpls + '/home.jade', function(err, html) {
                res.end(html)
             })
         })
 
-        // Boards list
+        /**
+         * Boards list
+         */
         app.get('/boards', function(req, res, next) {
-            fs.readdir(__dirname + '/boards', function(err, files) {
-                jade.renderFile(tpls + '/boards.jade', {locals: {boards: boards.all()}}, function(err, html) {
+            boards.all(function(err, boards) {
+                // maah... won't have any error here :)
+                jade.renderFile(tpls + '/boards/all.jade', {locals: {boards: boards}}, function(err, html) {
                    res.end(html)
                 })
             })
+        }
 
-        })
-
-        // Get form to create a board
+        /**
+         * Get form to create a board
+         */
         app.get('/board', function(req, res, next) {
-            jade.renderFile(tpls + '/board_form.jade', function(err, html) {
+            jade.renderFile(tpls + '/boards/form.jade', function(err, html) {
                res.end(html)
             })
         })
 
-        // New board
+        /**
+         * New board, empty (as in no stack)
+         * @params name {String} the board name
+         * @return 409 Conflict on already exist
+         * @return 302 Redirect on created, content-location headers point to the new board.
+         */
         app.post('/board', function(req, res, next) {
-            if(board.find(req.body.name)) {
-                    res.writeHead(404)
-                    res.send("already exist")
-            } else {
-                var board = boards.add(req.body.name)
-                board.create(function(err) {
-                    if(err) {
-                        res.writeHead(404)
-                    } else {
-                        // return layout + empty board
-                        jade.renderFile(tpls + '/board.jade', {locals: {board: board}}, function(err, html) {
-                            res.end(html)
+            boards.get({name: req.params.name}, function(board){
+                if(board.length > 0) {
+                    res.writeHead(409)
+                    res.send()
+                } else {
+                    new Board(db, {name: req.params.name, boards: boards})
+                        .save(function(err, board) {
+                            // don't bother about save fail.
+                            response.writeHead(302, {
+                                'Location': '/board/' + board[0].name
+                            });
+                            response.end();
                         })
-                    }
-                })
-            }
-        })
+                }
+            })
+        }
 
-        // Getting a board
-        app.get('/board/:id', function(req, res, next) {
-            var board = boards.find(req.params.id)
-            if(!board) {
-                res.writeHead(404)
-                res.end()
-            } else {
-                jade.renderFile(tpls + '/board.jade', {locals: {board: board}}, function(err, html) {
-                   res.end(html)
-                })
-            }
-        })
-
-        // Saving a board.
-        app.post('/board/:id', function(req, res, next) {
-            var board = boards.find(req.params.id)
-            if(board) {
-                var xml = ''
-                req.on('data', function(d) {xml += d})
-                req.on('end', function() {
-                    board.save(xml, function(err) {
-                        if(err) {
-                            res.writeHead(404)
-                        }
-                        res.end()
+        /**
+         * Getting a board by it's name
+         * @return 404 Not Found if it doesn't exist
+         */
+        app.get('/board/:name', function(req, res, next) {
+            boards.get({name: req.params.name}, function(board){
+                if(board.length > 0) {
+                    jade.renderFile(tpls + '/boards/item.jade', {locals: {board: board[0]}}, function(err, html) {
+                       res.end(html)
                     })
-                })
-            } else {
-                res.writeHead(404)
-                res.end()
-            }
-        })
-        
-        // do deploy on a board.
-        app.post('/board/:id/deploy', function(req, res, next) {
-            console.log('wanna deploy' + req.params.id)
-            var board = boards.find(req.params.id)
-            if(board) {
-                board.deploy(function(err) {
-                    if(err) {
-                        console.log('unable to deploy', req.params.id)
-                        res.writeHead(404)
-                    }
-                    res.end()
-                })
-            } else {
-                res.writeHead(404)
-                res.end()
-            }
-        })
-
-        // Getting board release list
-        app.get('/board/:id/deploy', function(req, res, next) {
-            fs.readdir(__dirname + '/boards/' + req.params.id, function(err, files) {
-                var filtered = []
-                files.forEach(function(file) {
-                    if(file.substring(0, 'deployed-'.length) == 'deployed-') {
-                        filtered.push(file)
-                    }
-                })
-                jade.renderFile(tpls + '/deployed.jade', {locals: {name: req.params.id, files: filtered}}, function(err, html) {
-                    res.end(html)
-                })
+                } else {
+                    res.writeHead(404)
+                    res.send()
+                }
             })
         })
-    }),
-    
+
+        /**
+         * Get form to create a Stack
+         */
+        app.get('/board/:board/stack', function(req, res, next) {
+            jade.renderFile(tpls + '/stacks/form.jade', function(err, html) {
+               res.end(html)
+            })
+        })
+
+        /**
+         * Add stack to a board.
+         * @return 302 Redirect, on created, content-location headers point to the new stack.
+         * @return 404 Not found, board doesn't exist.
+         * @return 409 Conflict, on stack already exist.
+         */
+        app.post('/board/:name/stack', function(req, res, next) {
+            boards.get({name: req.params.name}, function(board) {
+                if(board.length < 0) {
+                    res.writeHead(409)
+                    res.send()
+                } else {
+                    new Stack(db, {name: req.params.name, board: board[0]})
+                        .save(function(err, stack) {
+                            // don't bother about save fail.
+                            response.writeHead(302, {
+                                'Location': '/board/' + board[0].name + '/stack/' + stack[0].name
+                            });
+                            response.end();
+                        })
+                }
+            })
+        }
+
+        /**
+         * Getting a stack by it's name
+         * @return 404 Not Found if it doesn't exist
+         */
+        app.get('/board/:board/stack/:stack', function(req, res, next) {
+            new Stack(db, {
+                    name: req.params.stack,
+                    board: {
+                        name: req.params.board
+                    }
+                }, function(stack) {
+                if(stack.length < 0) {
+                    jade.renderFile(tpls + '/stacks/item.jade', {locals: {stack: stack[0]}}, function(err, html) {
+                       res.end(html)
+                    })
+                } else {
+                    res.writeHead(404)
+                    res.send()
+                }
+            })
+        })
+
+        /**
+         * Get form to create a Sticky
+         */
+        app.get('/board/:board/stack/:stack/sticky', function(req, res, next) {
+            jade.renderFile(tpls + '/stickies/form.jade', function(err, html) {
+               res.end(html)
+            })
+        })
+
+        /**
+         * Add sticky to a stack.
+         * @return 302 Redirect, on created, content-location headers point to the new sticky.
+         * @return 404 Not found, board or stack doesn't exist.
+         * @return 409 Conflict, on sticky already exist.
+         */
+        app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
+            var stack = new Stack({
+                name: req.params.stack,
+                board: {
+                    name: req.params.board
+                }})
+            stack.get({name: req.params.sticky}, function(sticky) {
+                if(sticky.length > 0) {
+                    res.writeHead(409)
+                    res.send()
+                } else {
+                    stack.board.get(stack, function(stack) {
+                        stack.
+                    })
+                        
+                    new Stack(db, {name: req.params.name, board: board[0]})
+                        .save(function(err, stack) {
+                            // don't bother about save fail.
+                            response.writeHead(302, {
+                                'Location': '/board/' + board[0].name + '/stack/' + stack[0].name
+                            });
+                            response.end();
+                        })
+                }
+            })
+        }
+
+        /**
+         * Getting a sticky by it's name
+         * @return 404 Not Found if it doesn't exist
+         */
+        app.get('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
+            new Sticky(db, {
+                name: req.params.sticky,
+                stack: {
+                    name: req.params.stack,
+                    board: {
+                        name: req.params.board
+                }}}, function(sticky) {
+                if(sticky.length < 0) {
+                    jade.renderFile(tpls + '/stickies/item.jade', {locals: {sticky: sticky[0]}}, function(err, html) {
+                       res.end(html)
+                    })
+                } else {
+                    res.writeHead(404)
+                    res.send()
+                }
+            })
+        })
+
+        /**
+         * do deploy on a board.
+         * @return 404 Not found, on stack empty or unknown.
+         * @return 302 Redirect, with the content location pointing to the deployed stack.
+         */
+        app.post('/board/:board/stack/:stack/deploy', function(req, res, next) {
+            res.writeHead(501)
+            res.end()
+        })
+
     Connect.logger(),
     Connect.static(__dirname + '/public')
 )
-server.listen(3000);
+
+new Boards(db, function(err, res) {
+    boards = res
+    server.listen(3000);
+    console.log('up and ready on http://localhost:3000')
+})
+
 
 var socket = io.listen(server);
 socket.on('connection', socket.prefixWithMiddleware( function (client, req, res) {
@@ -181,4 +275,3 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
     });
 }));
 
-console.log('up and ready on http://localhost:3000')

@@ -1,0 +1,34 @@
+!!! 5
+html(lang: "en")
+  head
+    meta(charset: "utf-8")
+    title Board
+    link(href: "/stylesheets/base.css", rel: "stylesheet")
+    script(type: "text/javascript", src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js")
+    script(type: "text/javascript", src: "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.min.js")
+    script(type: "text/javascript", src: "http://www.appelsiini.net/download/jquery.jeditable.js") 
+    script(type: "text/javascript", src: "/javascripts/socket.io.js")
+    script(type: "text/javascript", src: "/javascripts/board.js")
+  body
+    header
+      p ScrumBoard : #{board.name}
+      a(href: '/board/' + board.name + '/deploy') previous
+    section
+      !{board.data}
+    section
+      article#tplSticky
+        header: h2.editable Ticket title
+        section: p.editable Content ticket
+        footer: p.editable
+      section.trash.stack
+        ul
+          li ppppppppppppppppppppppppppppppppppppppp
+            br
+              ppppppppppppppppppp
+        
+    aside
+      ul
+        li: a#addSticky.button.pink(href: '#') New stickies
+        li: a#deployBoard.button.green(href: '/board/' + board.name + '/deploy') Deploy
+        li: a#saveBoard.button.green(href: '/board/' + board.name) Save
+    footer: p Design by Zyll and Shoko

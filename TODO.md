@@ -1,0 +1,15 @@
+# todo
+- slug on boards.
+- slug on stacks.
+- implement update (do the U of crud and use POST and PUT as in rest (using _put in form and middleware)).
+- add a uri property to each models.
+- a get on a model should not return an array but an object.
+- better slugging, use - in place of %20 (other beautify are welcome)
+- removing a stack should remove its stickies too. Same is true for Board and Stack.
+- implement deploy ability.
+- implement user ability.
+- provide a service to be aware about any change on any type of object (using socket.io for browser agent, or any other kind of notif as email or a human or url callback for a server).
+- do tpl
+- work on include in a tpl
+- backbonise
+- event feedback
