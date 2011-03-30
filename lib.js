@@ -131,11 +131,9 @@ Boards.prototype.get = function(key, cb) {
         if(err || res.length == 0) {
             cb(err, res)
         } else {
-            cb(err, res.map(function(board) {
-                var b = new Board(self.db, board)
-                b.boards = self
-                return b
-            }))
+            var board = new Board(self.db, res[0].value)
+            board.boards = self
+            cb(err, board)
         }
     })
 }
@@ -164,9 +162,7 @@ Board.prototype.get = function(key, cb) {
         if(err || res.length == 0) {
             cb(err, res)
         } else {
-            cb(err, res.map(function(stack) {
-                return new Stack(self.db, stack)
-            }))
+            cb(err, new Stack(self.db, res[0].value))
         }
     })
 }
@@ -297,9 +293,7 @@ Stack.prototype.get = function(key, cb) {
         if(err || res.length == 0) {
             cb(err, res)
         } else {
-            cb(err, res.map(function(sticky) {
-                return new Sticky(self.db, sticky)
-            }))
+            cb(err, new Sticky(self.db, res[0].value))
         }
     })
 }

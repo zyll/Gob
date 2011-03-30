@@ -63,15 +63,15 @@ vows.describe('A boards db').addBatch({
                         'topic': function(board, err, boards) {
                             boards.get({name: 'test'}, this.callback)
                         },
-                        'it should return a list with the board \'test\'': function(err, board) {
-                            assert.instanceOf(board[0], Board)
-                            assert.equal(board[0].name, 'test')
-                            assert.isNotNull(board[0].id)
+                        'it should return the board \'test\'': function(err, board) {
+                            assert.instanceOf(board, Board)
+                            assert.equal(board.name, 'test')
+                            assert.isNotNull(board.id)
                         },
                         'when adding a stack': {
                             'topic': function(board, err, boards) {
-                                var stack = new Stack(db, {name: 'todo', board: board[0]})
-                                board[0].add(stack)
+                                var stack = new Stack(db, {name: 'todo', board: board})
+                                board.add(stack)
                                 stack.save(this.callback)
                             },
                             'it should return a Stack object': function(err, stack) {
@@ -80,22 +80,20 @@ vows.describe('A boards db').addBatch({
                             'when getting a stack': {
                                 'topic': function(err, stack) {
                                     new Board(db, {name: 'test'})
-                                    .get({name: 'todo'}, this.callback)
+                                        .get({name: 'todo'}, this.callback)
                                 },
-                                'it should return a Stack object list': function(err, stacks) {
-                                    assert.isArray(stacks)
-                                    assert.equal(stacks.length, 1)
-                                    assert.instanceOf(stacks[0], Stack)
-                                    assert.equal(stacks[0].board.name, 'test')
+                                'it should return a Stack object': function(err, stack) {
+                                    assert.instanceOf(stack, Stack)
+                                    assert.equal(stack.board.name, 'test')
 
                                 },
                                 'when adding a sticky to the stack': {
-                                    'topic': function(stacks) {
+                                    'topic': function(stack) {
                                         var sticky = new Sticky(db, {title: 'title',
                                                                 slug: 'title',
                                                                 content: 'content',
                                                                 user: 'user'})
-                                                                stacks[0].add(sticky)
+                                                                stack.add(sticky)
                                                                 sticky.save(this.callback)
 
                                     },
@@ -109,14 +107,13 @@ vows.describe('A boards db').addBatch({
                                             new Stack(db, {name: 'todo', board: {name: 'test'}})
                                             .get({slug: 'title'}, this.callback)
                                         },
-                                        'it should return a stickies list with one sticky': function(err, stickies) {
-                                            assert.equal(stickies.length, 1)
-                                            assert.instanceOf(stickies[0], Sticky)
-                                            assert.equal(stickies[0].title, 'title')
+                                        'it should return a sticky': function(err, sticky) {
+                                            assert.instanceOf(sticky, Sticky)
+                                            assert.equal(sticky.title, 'title')
                                         },
                                         'when removing sticky from the stack': {
-                                            'topic': function(stickies) {
-                                                stickies[0].remove(this.callback)
+                                            'topic': function(sticky) {
+                                                sticky.remove(this.callback)
                                             },
                                             'it should ack': function(err, res) {
                                                 assert.isNull(err)
@@ -126,8 +123,8 @@ vows.describe('A boards db').addBatch({
                                                     new Stack(db, {name: 'todo', board: {name: 'test'}})
                                                     .get({title: 'title'}, this.callback)
                                                 },
-                                                'it should return empty list': function(err, stickies) {
-                                                    assert.isEmpty(stickies)
+                                                'it should return null': function(err, sticky) {
+                                                    assert.isEmpty(sticky)
                                                 }
                                             }
                                         }
@@ -178,33 +175,30 @@ vows.describe('A boards db').addBatch({
             topic: function(boards) {
                 boards.get({name: 'test2'}, this.callback)
             },
-            'it should be uniq': function(err, board) {
+            'it should be the board test2': function(err, board) {
                 assert.isNull(err)
-                assert.equal(board.length, 1)
-                assert.equal(board[0].name, 'test2')
+                assert.equal(board.name, 'test2')
             },
             'when searching the todo stack': {
                 'topic': function(board) {
-                    board[0].get({name: 'deploy'}, this.callback)
+                    board.get({name: 'deploy'}, this.callback)
                 },
                 'it should return the todo stack for this board': function(err, stack) {
                     assert.isNull(err)
-                    assert.equal(stack.length, 1)
-                    assert.equal(stack[0].name, 'deploy')
+                    assert.equal(stack.name, 'deploy')
                 },
                 'when getting the sticky': {
                     'topic': function(stack) {
-                        stack[0].get({slug: 'test2deplo1'}, this.callback)
+                        stack.get({slug: 'test2deplo1'}, this.callback)
                     },
-                    'it should return only one sticky': function(err, sticky) {
+                    'it should return the sticky': function(err, sticky) {
                         assert.isNull(err)
-                        assert.equal(sticky.length, 1)
-                        assert.ok(sticky[0].title.match(/^test2deploy[AB]$/))
+                        assert.ok(sticky.title.match(/^test2deploy[AB]$/))
                     }
                 },
                 'when getting all the sticky for test2': {
                     'topic': function(stack) {
-                        stack[0].all(this.callback)
+                        stack.all(this.callback)
                     },
                     'it should return 6 stickies': function(err, stickies) {
                         assert.isNull(err)
