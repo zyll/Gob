@@ -376,7 +376,7 @@ Sticky.prototype.save = function(cb) {
 }
 
 Sticky.prototype.url = function() {
-    return ['/board', this.stack.board.board.name,
+    return ['/board', this.stack.board.name,
             'stack', this.stack.name,
             'sticky', this.slug].join('/')
 }

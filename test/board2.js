@@ -49,6 +49,7 @@ vows.describe('A boards db').addBatch({
                     'it should callback with a Board': function(err, board) {
                         assert.isNull(err)
                         assert.instanceOf(board, Board)
+                        assert.equal(board.url(), '/board/test')
                     },
                     'when getting all the boards': {
                         'topic': function(board, err, boards) {
@@ -85,7 +86,7 @@ vows.describe('A boards db').addBatch({
                                 'it should return a Stack object': function(err, stack) {
                                     assert.instanceOf(stack, Stack)
                                     assert.equal(stack.board.name, 'test')
-
+                                    assert.equal(stack.url(), '/board/test/stack/todo')
                                 },
                                 'when adding a sticky to the stack': {
                                     'topic': function(stack) {
@@ -93,8 +94,8 @@ vows.describe('A boards db').addBatch({
                                                                 slug: 'title',
                                                                 content: 'content',
                                                                 user: 'user'})
-                                                                stack.add(sticky)
-                                                                sticky.save(this.callback)
+                                        stack.add(sticky)
+                                        sticky.save(this.callback)
 
                                     },
                                     'it should return a Sticky object': function(err, sticky) {
@@ -110,6 +111,7 @@ vows.describe('A boards db').addBatch({
                                         'it should return a sticky': function(err, sticky) {
                                             assert.instanceOf(sticky, Sticky)
                                             assert.equal(sticky.title, 'title')
+                                            assert.equal(sticky.url(), '/board/test/stack/todo/sticky/title')
                                         },
                                         'when removing sticky from the stack': {
                                             'topic': function(sticky) {
