@@ -62,11 +62,12 @@ vows.describe('A boards db').addBatch({
                     },
                     'when getting the board test': {
                         'topic': function(board, err, boards) {
-                            boards.get({name: 'test'}, this.callback)
+                            boards.get({slug: 'test'}, this.callback)
                         },
                         'it should return the board \'test\'': function(err, board) {
                             assert.instanceOf(board, Board)
                             assert.equal(board.name, 'test')
+                            assert.equal(board.slug, 'test')
                             assert.isNotNull(board.id)
                         },
                         'when adding a stack': {
@@ -79,21 +80,21 @@ vows.describe('A boards db').addBatch({
                                 assert.instanceOf(stack, Stack)
                             },
                             'when getting a stack': {
-                                'topic': function(err, stack) {
-                                    new Board(db, {name: 'test'})
-                                        .get({name: 'todo'}, this.callback)
+                                'topic': function() {
+                                    new Board(db, {slug: 'test'})
+                                        .get({slug: 'todo'}, this.callback)
                                 },
                                 'it should return a Stack object': function(err, stack) {
                                     assert.instanceOf(stack, Stack)
-                                    assert.equal(stack.board.name, 'test')
+                                    assert.equal(stack.board.slug, 'test')
+                                    assert.equal(stack.slug, 'todo')
                                     assert.equal(stack.url(), '/board/test/stack/todo')
                                 },
                                 'when adding a sticky to the stack': {
                                     'topic': function(stack) {
                                         var sticky = new Sticky(db, {title: 'title',
-                                                                slug: 'title',
-                                                                content: 'content',
-                                                                user: 'user'})
+                                                                    content: 'content',
+                                                                    user: 'user'})
                                         stack.add(sticky)
                                         sticky.save(this.callback)
 
@@ -105,7 +106,7 @@ vows.describe('A boards db').addBatch({
                                     },
                                     'when get the sticky': {
                                         'topic': function() {
-                                            new Stack(db, {name: 'todo', board: {name: 'test'}})
+                                            new Stack(db, {slug: 'todo', board: {slug: 'test'}})
                                             .get({slug: 'title'}, this.callback)
                                         },
                                         'it should return a sticky': function(err, sticky) {
@@ -145,23 +146,26 @@ vows.describe('A boards db').addBatch({
             var self = this
             var fill = function(cb) {
                 new Boards(db2, function(err, boards) {
-                    todo = 12 
-                    done = function() {
-                        if(--todo == 0) {
-                            cb(null, boards)
-                        }
-                    };
-                    ['test1', 'test2'].forEach(function(board){
-                        new Board(db2, {name: board})
-                            .save(done);
-                        ['todo', 'progress', 'deploy'].forEach(function(stack) {
-                            new Stack(db2, {name: stack, board:{name: board}})
-                                .save(done);
-                            ['A', 'B'].forEach(function(sticky) {
-                                new Sticky(db2, {title: board+stack+sticky, stack: {name: stack, board:{name: board}}})
-                                    .save(done)
-                            })
+                    var todo = 12
+                      , done = function() {
+                        if(--todo == 0) cb(null, boards)
+                    }
+                    var w_stickies = function (err, stack) {
+                        ['A', 'B'].forEach(function(sticky) {
+                            new Sticky(db2, {title: stack.board.name + stack.name + sticky, stack: stack})
+                                .save(done)
                         })
+                    }
+                    var w_stacks = function (err, board) {
+                        ['todo', 'progress', 'deploy'].forEach(function(stack) {
+                            new Stack(db2, {name: stack, board: board})
+                                .save(w_stickies)
+                        })
+                    }
+                    ;['test1', 'test2'].forEach(function(board) {
+                        var b = new Board(db2, {name: board})
+                        boards.add(b)
+                        b.save(w_stacks)
                     })
                 })
             }
@@ -175,7 +179,7 @@ vows.describe('A boards db').addBatch({
         },
         'when searching for a  board \'test1\'': {
             topic: function(boards) {
-                boards.get({name: 'test2'}, this.callback)
+                boards.get({slug: 'test2'}, this.callback)
             },
             'it should be the board test2': function(err, board) {
                 assert.isNull(err)
@@ -183,7 +187,7 @@ vows.describe('A boards db').addBatch({
             },
             'when searching the todo stack': {
                 'topic': function(board) {
-                    board.get({name: 'deploy'}, this.callback)
+                    board.get({slug: 'deploy'}, this.callback)
                 },
                 'it should return the todo stack for this board': function(err, stack) {
                     assert.isNull(err)

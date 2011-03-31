@@ -6,12 +6,46 @@ var fs = require('fs')
   , sys = require('sys')
   , events = require('events')
   , cradle = require('cradle')
+
+/**
+ * Give slug powa to an object. this one have now a sluggyfy
+ * method in order to generate an appropriate slug in the slug property.
+ * This slug is reserved while the object is not persisted, flush the cache should be done in the object itself.
+ */
+function Slugify(obj, prop, parent) {
+    obj.prototype._in_write_slugging = []
+    obj.prototype.slugging = function(cb) {
+        var self = this
+        var slug = escape(this[prop].substring(0, 10))
+        var base_slug = slug
+        var acc = 0
+        var parent_slug = this[parent].slug || this[parent].name || ''
+        var find_it = function() {
+            if(self._in_write_slugging.indexOf(parent_slug + '/' + slug) >= 0) {
+                slug = base_slug + (++acc)
+                find_it()
+            } else {
+                self._in_write_slugging.push(parent_slug + '/' + slug)
+                self[parent].get({slug: slug}, function(err, res) {
+                    if(res.length > 0) {
+                        delete self._in_write_slugging.indexOf((parent_slug) + '/' + slug)
+                        slug = base_slug + (++acc)
+                        find_it()
+                    } else {
+                        cb(slug)
+                    }
+                })
+            }
+        }
+        find_it()
+    }
+}
+
   
 /**
  * Main handler to all boards.
- * @param {Object} conf hash (name ) or db
+ * @param {Object} conf hash (name) or db
  * @return self
- * sync
  */
 var Boards = function(db, cb) {
     events.EventEmitter.call(this)
@@ -28,7 +62,7 @@ Boards.prototype.init = function(cb) {
     var self = this
     this.db.exists(function(err, res) {
         if(!res) {
-            var todo = 3 
+            var todo = 5
             var done = function(err) {
                 if(--todo == 0) {
                     cb(null, self)
@@ -38,9 +72,9 @@ Boards.prototype.init = function(cb) {
                 self.db.save('_design/boards', {
                     all: {
                         map: function (doc) {
-                            if (doc.type == 'board' && doc.name) {
+                            if (doc.type == 'board' && doc.slug) {
                                 emit({
-                                    name: doc.name
+                                    slug: doc.slug
                                 }, doc)
                             }
                         }
@@ -49,9 +83,9 @@ Boards.prototype.init = function(cb) {
                 self.db.save('_design/stack', {
                     all: {
                         map: function (doc) {
-                            if (doc.type == 'stack' && doc.name && doc.board) {
+                            if (doc.type == 'stack' && doc.slug && doc.board) {
                                 emit({
-                                    name: doc.name,
+                                    slug: doc.slug,
                                     board: doc.board
                                 }, doc)
                             };
@@ -62,7 +96,7 @@ Boards.prototype.init = function(cb) {
                     all: {
                         map: function (doc) {
                             if (doc.type == 'stack' && doc.name && doc.board && doc.board.name) {
-                                emit([doc.board.name, doc.name], doc)
+                                emit([doc.board.slug, doc.slug], doc)
                             };
                         }
                     }
@@ -82,12 +116,13 @@ Boards.prototype.init = function(cb) {
                 self.db.save('_design/stickies', {
                     all: {
                         map: function (doc) {
-                            if (doc.type == 'sticky' && doc.slug && doc.stack && doc.stack.name && doc.stack.board && doc.stack.board.name) {
-                                emit([doc.stack.board.name, doc.stack.name, doc.slug], doc)
+                            if (doc.type == 'sticky' && doc.slug && doc.stack && doc.stack.slug && doc.stack.board && doc.stack.board.slug) {
+                                emit([doc.stack.board.slug, doc.stack.slug, doc.slug], doc)
                             };
                         }
                     }
-                }, done)            })
+                }, done)
+            })
         } else {
             cb(null, self)
         }
@@ -147,31 +182,33 @@ Boards.prototype.get = function(key, cb) {
 var Board = function(db, data) {
     events.EventEmitter.call(this);
     this.name = data.name
-    this.id = data._id || null
-    this.rev = data._rev || null
+    this.slug = data.slug
+    this.id = data._id
+    this.rev = data._rev
     this.db = db
 }
 sys.inherits(Board, events.EventEmitter)
+Slugify(Board, 'name', 'boards')
  
 Board.prototype.get = function(key, cb) {
     var self = this
-    key.board = {name: this.name}
+    key.board = {slug: this.slug}
     this.db.view('stack/all',
                  {key: key},
                  function(err, res) {
-        if(err || res.length == 0) {
-            cb(err, res)
-        } else {
-            cb(err, new Stack(self.db, res[0].value))
-        }
-    })
+                     if(err || res.length == 0) {
+                         cb(err, res)
+                     } else {
+                         cb(err, new Stack(self.db, res[0].value))
+                     }
+                 })
 }
 
 Board.prototype.all = function(cb) {
     var self = this
 
     this.db.view('stacks/all',
-                 {startkey: [this.name], endkey: [this.name, {}]},
+                 {startkey: [this.slug], endkey: [this.slug, {}]},
                  function(err, res) {
         if(err || res.length == 0) {
             cb(err, res)
@@ -197,28 +234,35 @@ Board.prototype.save = function(cb) {
     var self = this
     var data = {
         type: 'board',
-        name: this.name
+        name: this.name,
+        slug: this.slug
     } 
     if(this.id) {
         this.db.save(this.id, data, function(err, res) {
             cb(err, self)
         })
     } else {
-        this.db.save(data, function(err, res) {
-            if(!err) {
-                self.id = res.id
-            }
-            cb(err, self)
+        this.slugging(function(slug) {
+            data.slug = slug
+            self.slug = slug
+            self.db.save(data, function(err, res) {
+                if(!err) {
+                    self.id = res.id
+                    self.rev = res._rev
+                }
+                delete self._in_write_slugging[self._in_write_slugging.indexOf(slug)]
+                cb(err, self)
+            })
         })
     }
 }
 
 Board.prototype.url = function() {
-    return '/board/' + this.name
+    return '/board/' + this.slug
 }
 
 Board.prototype.include = function() {
-    return {name: this.name}
+    return {slug: this.slug}
 }
 
 /**
@@ -230,11 +274,13 @@ var Stack = function(db, data) {
     events.EventEmitter.call(this);
     this.db = db
     this.name = data.name
-    this.id = data._id || null
-    this.rev = data._rev || null
+    this.slug = data.slug
+    this.id = data._id
+    this.rev = data._rev
     this.board = typeof(data.board) == 'object' ? new  Board(db, data.board) : data.board
 }
 sys.inherits(Stack, events.EventEmitter)
+Slugify(Stack, 'name', 'board')
 
 Stack.prototype.add = function(sticky) {
     sticky.stack = this
@@ -246,41 +292,46 @@ Stack.prototype.save = function(cb) {
     var data = {
         type: 'stack',
         board: this.board.include(),
-        name: this.name
+        name: this.name,
+        slug: this.slug
     }
     if(this.id) {
         this.db.save(this.id, data, function(err, res) {
             cb(err, self)
         })
     } else {
-        // get the slug
-        this.db.save(data, function(err, res) {
-            if(!err) {
-                self.id = res.id
-            }
-            cb(err, self)
+        this.slugging(function(slug) {
+            data.slug = slug
+            self.slug = slug
+            self.db.save(data, function(err, res) {
+                if(!err) {
+                    self.id = res._id
+                    self.rev = res._res
+                }
+                delete self._in_write_slugging[self._in_write_slugging.indexOf(data.board.slug + '/' + slug)]
+                cb(err, self)
+            })
         })
     }
 }
 
 Stack.prototype.url = function() {
-    return ['/board', this.board.name,
-            'stack', this.name].join('/')
+    return ['/board', this.board.slug,
+            'stack', this.slug].join('/')
 }
 
 Stack.prototype.include = function() {
     return {
         board: this.board.include(),
-        name: this.name,
+        slug: this.slug,
     }
 }
 Stack.prototype.all = function(cb) {
     var self = this
     this.db.view('stickies/all',
-                 {startkey: [this.board.name, this.name], endkey: [[this.board.name, this.name, {}]]},
+                 {startkey: [this.board.slug, this.slug], endkey: [[this.board.slug, this.slug, {}]]},
                  function(err, res) {
         if(err || res.length == 0) {
-            console.log(err, res)
             cb(err, res)
         } else {
             cb(err, res.map(function(sticky) {
@@ -293,7 +344,6 @@ Stack.prototype.all = function(cb) {
 Stack.prototype.get = function(key, cb) {
     var self = this
     key.stack = this.include()
-    var flat = 
     this.db.view('sticky/all',
                  {key: key},
                  function(err, res) {
@@ -317,36 +367,9 @@ var Sticky = function(db, data) {
     this.rev = data._rev || null
 }
 sys.inherits(Sticky, events.EventEmitter)
+Slugify(Sticky, 'title', 'stack')
 
-/**
- * @todo add a vew to the db and use collation to find possible collision in slug.
- */
-Sticky.prototype.slugging = function(cb) {
-    self = this
-    var slug = escape(this.title.substring(0, 10))
-    var base_slug = slug
-    var acc = 0
-    var find_it = function() {
-        if(self._in_write_slugging.indexOf(self.stack.name+'/'+slug) >= 0) {
-            slug = base_slug + (++acc)
-            find_it()
-        } else {
-            self._in_write_slugging.push(self.stack.name+'/'+slug)
-            self.stack.get({slug: slug}, function(err, res) {
-                if(res.length > 0) {
-                    delete self._in_write_slugging.indexOf(self.stack.name+'/'+slug)
-                    slug = base_slug + (++acc)
-                    find_it()
-                } else {
-                    cb(slug)
-                }
-            })
-        }
-    }
-    find_it()
-}
 
-Sticky.prototype._in_write_slugging = []
 Sticky.prototype.save = function(cb) {
     var self = this
       , data = {
@@ -376,8 +399,8 @@ Sticky.prototype.save = function(cb) {
 }
 
 Sticky.prototype.url = function() {
-    return ['/board', this.stack.board.name,
-            'stack', this.stack.name,
+    return ['/board', this.stack.board.slug,
+            'stack', this.stack.slug,
             'sticky', this.slug].join('/')
 }
 
