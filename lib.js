@@ -14,7 +14,7 @@ var fs = require('fs')
  * sync
  */
 var Boards = function(db, cb) {
-    events.EventEmitter.call(this);
+    events.EventEmitter.call(this)
     this.db = db
     this.init(cb)
 }
@@ -213,6 +213,10 @@ Board.prototype.save = function(cb) {
     }
 }
 
+Board.prototype.url = function() {
+    return '/board/' + this.name
+}
+
 Board.prototype.include = function() {
     return {name: this.name}
 }
@@ -242,7 +246,7 @@ Stack.prototype.save = function(cb) {
     var data = {
         type: 'stack',
         board: this.board.include(),
-        name: this.name,
+        name: this.name
     }
     if(this.id) {
         this.db.save(this.id, data, function(err, res) {
@@ -259,6 +263,11 @@ Stack.prototype.save = function(cb) {
     }
 }
 
+Stack.prototype.url = function() {
+    return ['/board', this.board.name,
+            'stack', this.name].join('/')
+}
+
 Stack.prototype.include = function() {
     return {
         board: this.board.include(),
@@ -267,8 +276,6 @@ Stack.prototype.include = function() {
 }
 Stack.prototype.all = function(cb) {
     var self = this
-    var startkey = 
-
     this.db.view('stickies/all',
                  {startkey: [this.board.name, this.name], endkey: [[this.board.name, this.name, {}]]},
                  function(err, res) {
@@ -366,6 +373,12 @@ Sticky.prototype.save = function(cb) {
             }) 
         })
     }
+}
+
+Sticky.prototype.url = function() {
+    return ['/board', this.stack.board.board.name,
+            'stack', this.stack.name,
+            'sticky', this.slug].join('/')
 }
 
 Sticky.prototype.remove = function(cb) {

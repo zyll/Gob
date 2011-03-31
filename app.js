@@ -19,7 +19,7 @@ var http    = require('http')
 var tpls = __dirname + '/jade'
   , db = Boards.client({name: 'dev_boards'})
   // make it globals (is that a fixme ?)
-  , var boards = null
+  , boards = null
 
   /*
 * @todo rely on an object to catch save event
@@ -29,8 +29,9 @@ boards.on('board:save', function(data) {
 */
 
 var server = Connect.createServer(
-        Connect.bodyParser(),
-        Connect.router(function(app) {
+    Connect.static(__dirname + '/public'),
+    Connect.bodyParser(),
+    Connect.router(function(app) {
 
         /**
         * Home
@@ -51,7 +52,7 @@ var server = Connect.createServer(
                    res.end(html)
                 })
             })
-        }
+        })
 
         /**
          * Get form to create a board
@@ -69,31 +70,31 @@ var server = Connect.createServer(
          * @return 302 Redirect on created, content-location headers point to the new board.
          */
         app.post('/board', function(req, res, next) {
-            boards.get({name: req.params.name}, function(board){
-                if(board.length > 0) {
+            boards.get({name: req.body.name}, function(err, board){
+                if(board) {
                     res.writeHead(409)
                     res.send()
                 } else {
-                    new Board(db, {name: req.params.name, boards: boards})
+                    new Board(db, {name: req.body.name, boards: boards})
                         .save(function(err, board) {
                             // don't bother about save fail.
-                            response.writeHead(302, {
-                                'Location': '/board/' + board[0].name
+                            res.writeHead(302, {
+                                'Location': board.url()
                             });
-                            response.end();
+                            res.end();
                         })
                 }
             })
-        }
+        })
 
         /**
          * Getting a board by it's name
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:name', function(req, res, next) {
-            boards.get({name: req.params.name}, function(board){
-                if(board.length > 0) {
-                    jade.renderFile(tpls + '/boards/item.jade', {locals: {board: board[0]}}, function(err, html) {
+            boards.get({name: req.params.name}, function(err, board){
+                if(board) {
+                    jade.renderFile(tpls + '/boards/item.jade', {locals: {board: board}}, function(err, html) {
                        res.end(html)
                     })
                 } else {
@@ -119,22 +120,20 @@ var server = Connect.createServer(
          * @return 409 Conflict, on stack already exist.
          */
         app.post('/board/:name/stack', function(req, res, next) {
-            boards.get({name: req.params.name}, function(board) {
-                if(board.length < 0) {
+            boards.get({name: req.body.name}, function(err, board) {
+                if(board) {
                     res.writeHead(409)
                     res.send()
                 } else {
-                    new Stack(db, {name: req.params.name, board: board[0]})
+                    new Stack(db, {name: req.body.name, board: board})
                         .save(function(err, stack) {
                             // don't bother about save fail.
-                            response.writeHead(302, {
-                                'Location': '/board/' + board[0].name + '/stack/' + stack[0].name
-                            });
-                            response.end();
+                            res.writeHead(302, {'Location': stack.url()});
+                            res.end();
                         })
                 }
             })
-        }
+        })
 
         /**
          * Getting a stack by it's name
@@ -146,9 +145,9 @@ var server = Connect.createServer(
                     board: {
                         name: req.params.board
                     }
-                }, function(stack) {
-                if(stack.length < 0) {
-                    jade.renderFile(tpls + '/stacks/item.jade', {locals: {stack: stack[0]}}, function(err, html) {
+                }, function(err, stack) {
+                if(stack) {
+                    jade.renderFile(tpls + '/stacks/item.jade', {locals: {stack: stack}}, function(err, html) {
                        res.end(html)
                     })
                 } else {
@@ -174,31 +173,31 @@ var server = Connect.createServer(
          * @return 409 Conflict, on sticky already exist.
          */
         app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            var stack = new Stack({
-                name: req.params.stack,
+            var stack = new Stack(db, {
+                name: req.body.stack,
                 board: {
-                    name: req.params.board
+                    name: req.body.board
                 }})
-            stack.get({name: req.params.sticky}, function(sticky) {
-                if(sticky.length > 0) {
+            stack.get({name: req.body.sticky}, function(err, sticky) {
+                if(sticky) {
                     res.writeHead(409)
                     res.send()
                 } else {
-                    stack.board.get(stack, function(stack) {
-                        stack.
+                    stack.board.get(stack, function(err, stack) {
+                        if(!err && stack) {
+                            new Sticky(db, {name: req.body.sticky, stack: stack})
+                                .save(function(err, sticky) {
+                                    res.writeHead(302, {'Location': sticky.url()});
+                                    res.end();
+                                })
+                        } else {
+                            res.writeHead(500)
+                            res.end()
+                        }
                     })
-                        
-                    new Stack(db, {name: req.params.name, board: board[0]})
-                        .save(function(err, stack) {
-                            // don't bother about save fail.
-                            response.writeHead(302, {
-                                'Location': '/board/' + board[0].name + '/stack/' + stack[0].name
-                            });
-                            response.end();
-                        })
                 }
             })
-        }
+        })
 
         /**
          * Getting a sticky by it's name
@@ -211,16 +210,17 @@ var server = Connect.createServer(
                     name: req.params.stack,
                     board: {
                         name: req.params.board
-                }}}, function(sticky) {
-                if(sticky.length < 0) {
-                    jade.renderFile(tpls + '/stickies/item.jade', {locals: {sticky: sticky[0]}}, function(err, html) {
-                       res.end(html)
-                    })
-                } else {
-                    res.writeHead(404)
-                    res.send()
+                }}}, function(err, sticky) {
+                    if(!err && sticky) {
+                        jade.renderFile(tpls + '/stickies/item.jade', {locals: {sticky: sticky}}, function(err, html) {
+                           res.end(html)
+                        })
+                    } else {
+                        res.writeHead(404)
+                        res.send()
+                    }
                 }
-            })
+            )
         })
 
         /**
@@ -232,9 +232,8 @@ var server = Connect.createServer(
             res.writeHead(501)
             res.end()
         })
-
-    Connect.logger(),
-    Connect.static(__dirname + '/public')
+    }),    
+    Connect.logger()
 )
 
 new Boards(db, function(err, res) {
