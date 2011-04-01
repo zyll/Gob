@@ -16,7 +16,8 @@ function Slugify(obj, prop, parent) {
     obj.prototype._in_write_slugging = []
     obj.prototype.slugging = function(cb) {
         var self = this
-        var slug = escape(this[prop].substring(0, 10))
+        //var slug = escape(this[prop].substring(0, 10))
+        var slug = escape(this[prop].substring(0, 10)).replace(/\%20/g, '-')
         var base_slug = slug
         var acc = 0
         var parent_slug = this[parent].slug || this[parent].name || ''
@@ -47,10 +48,9 @@ function Slugify(obj, prop, parent) {
  * @param {Object} conf hash (name) or db
  * @return self
  */
-var Boards = function(db, cb) {
+var Boards = function(db) {
     events.EventEmitter.call(this)
     this.db = db
-    this.init(cb)
 }
 sys.inherits(Boards, events.EventEmitter)
 
@@ -95,7 +95,7 @@ Boards.prototype.init = function(cb) {
                 self.db.save('_design/stacks', {
                     all: {
                         map: function (doc) {
-                            if (doc.type == 'stack' && doc.name && doc.board && doc.board.name) {
+                            if (doc.type == 'stack' && doc.slug && doc.board && doc.board.slug) {
                                 emit([doc.board.slug, doc.slug], doc)
                             };
                         }
@@ -185,6 +185,7 @@ var Board = function(db, data) {
     this.slug = data.slug
     this.id = data._id
     this.rev = data._rev
+    this.boards = typeof(data.boards) == 'object' ? new  Boards(db, data.boards) : data.boards
     this.db = db
 }
 sys.inherits(Board, events.EventEmitter)
@@ -242,7 +243,7 @@ Board.prototype.save = function(cb) {
             cb(err, self)
         })
     } else {
-        this.slugging(function(slug) {
+        this.slugging(function slugging(slug) {
             data.slug = slug
             self.slug = slug
             self.db.save(data, function(err, res) {

@@ -1,6 +1,5 @@
 # todo
 - implement update (do the U of crud and use POST and PUT as in rest (using _put in form and middleware)).
-- better slugging, use - in place of %20 (other beautify are welcome)
 - removing a stack should remove its stickies too. Same is true for Board and Stack.
 - implement deploy ability.
 - implement user ability.
@@ -12,3 +11,4 @@
 - config file (server port, db conf ...)
 - backlog.
 - test that model return null on not found
+- add http method to get the stack form

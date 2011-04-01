@@ -19,7 +19,7 @@ var http    = require('http')
 var tpls = __dirname + '/jade'
   , db = Boards.client({name: 'dev_boards'})
   // make it globals (is that a fixme ?)
-  , boards = null
+  , boards = new Boards(db)
 
   /*
 * @todo rely on an object to catch save event
@@ -65,34 +65,23 @@ var server = Connect.createServer(
 
         /**
          * New board, empty (as in no stack)
-         * @params name {String} the board name
-         * @return 409 Conflict on already exist
+         * @params slug {String} the board slug
          * @return 302 Redirect on created, content-location headers point to the new board.
          */
         app.post('/board', function(req, res, next) {
-            boards.get({name: req.body.name}, function(err, board){
-                if(board) {
-                    res.writeHead(409)
-                    res.send()
-                } else {
-                    new Board(db, {name: req.body.name, boards: boards})
-                        .save(function(err, board) {
-                            // don't bother about save fail.
-                            res.writeHead(302, {
-                                'Location': board.url()
-                            });
-                            res.end();
-                        })
-                }
-            })
+            new Board(db, {name: req.body.name, boards: boards})
+                .save(function(err, board) {
+                    res.writeHead(302, {'Location': board.url()});
+                    res.end();
+                })
         })
 
         /**
-         * Getting a board by it's name
+         * Getting a board by it's slug
          * @return 404 Not Found if it doesn't exist
          */
-        app.get('/board/:name', function(req, res, next) {
-            boards.get({name: req.params.name}, function(err, board){
+        app.get('/board/:board', function(req, res, next) {
+            boards.get({slug: req.params.board}, function(err, board){
                 if(board) {
                     jade.renderFile(tpls + '/boards/item.jade', {locals: {board: board}}, function(err, html) {
                        res.end(html)
@@ -117,17 +106,15 @@ var server = Connect.createServer(
          * Add stack to a board.
          * @return 302 Redirect, on created, content-location headers point to the new stack.
          * @return 404 Not found, board doesn't exist.
-         * @return 409 Conflict, on stack already exist.
          */
-        app.post('/board/:name/stack', function(req, res, next) {
-            boards.get({name: req.body.name}, function(err, board) {
-                if(board) {
-                    res.writeHead(409)
+        app.post('/board/:board/stack', function(req, res, next) {
+            boards.get({slug: req.body.board}, function(err, board) {
+                if(!board) {
+                    res.writeHead(404)
                     res.send()
                 } else {
                     new Stack(db, {name: req.body.name, board: board})
                         .save(function(err, stack) {
-                            // don't bother about save fail.
                             res.writeHead(302, {'Location': stack.url()});
                             res.end();
                         })
@@ -136,14 +123,14 @@ var server = Connect.createServer(
         })
 
         /**
-         * Getting a stack by it's name
+         * Getting a stack by it's slug
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack', function(req, res, next) {
             new Stack(db, {
-                    name: req.params.stack,
+                    slug: req.params.stack,
                     board: {
-                        name: req.params.board
+                        slug: req.params.board
                     }
                 }, function(err, stack) {
                 if(stack) {
@@ -170,37 +157,25 @@ var server = Connect.createServer(
          * Add sticky to a stack.
          * @return 302 Redirect, on created, content-location headers point to the new sticky.
          * @return 404 Not found, board or stack doesn't exist.
-         * @return 409 Conflict, on sticky already exist.
          */
         app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            var stack = new Stack(db, {
-                name: req.body.stack,
-                board: {
-                    name: req.body.board
-                }})
-            stack.get({name: req.body.sticky}, function(err, sticky) {
-                if(sticky) {
-                    res.writeHead(409)
-                    res.send()
-                } else {
-                    stack.board.get(stack, function(err, stack) {
-                        if(!err && stack) {
-                            new Sticky(db, {name: req.body.sticky, stack: stack})
-                                .save(function(err, sticky) {
-                                    res.writeHead(302, {'Location': sticky.url()});
-                                    res.end();
-                                })
-                        } else {
-                            res.writeHead(500)
-                            res.end()
-                        }
-                    })
-                }
+            new Board(db, {slug: req.body.board})
+                .get({slug: stack}, function(err, stack) {
+                    if(!err && stack) {
+                        new Sticky(db, {name: req.body.sticky, stack: stack})
+                            .save(function(err, sticky) {
+                                res.writeHead(302, {'Location': sticky.url()});
+                                res.end();
+                            })
+                    } else {
+                        res.writeHead(500)
+                        res.end()
+                    }
             })
         })
 
         /**
-         * Getting a sticky by it's name
+         * Getting a sticky by it's slug
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
@@ -236,8 +211,7 @@ var server = Connect.createServer(
     Connect.logger()
 )
 
-new Boards(db, function(err, res) {
-    boards = res
+boards.init(function(err, res) {
     server.listen(3000);
     console.log('up and ready on http://localhost:3000')
 })

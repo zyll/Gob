@@ -25,7 +25,8 @@ vows.describe('A boards db').addBatch({
         },
         'when intanciate a list named testboards': {
             topic: function() {
-                new Boards(db, this.callback)
+                new Boards(db)
+                    .init(this.callback)
             },
             'it should create a db named testboards': function(err, boards) {
                 new(cradle.Connection)().database('testboards').exists(function(err, res) {
@@ -92,7 +93,7 @@ vows.describe('A boards db').addBatch({
                                 },
                                 'when adding a sticky to the stack': {
                                     'topic': function(stack) {
-                                        var sticky = new Sticky(db, {title: 'title',
+                                        var sticky = new Sticky(db, {title: 'title me &$ other',
                                                                     content: 'content',
                                                                     user: 'user'})
                                         stack.add(sticky)
@@ -107,12 +108,12 @@ vows.describe('A boards db').addBatch({
                                     'when get the sticky': {
                                         'topic': function() {
                                             new Stack(db, {slug: 'todo', board: {slug: 'test'}})
-                                            .get({slug: 'title'}, this.callback)
+                                            .get({slug: 'title-me-%26'}, this.callback)
                                         },
                                         'it should return a sticky': function(err, sticky) {
                                             assert.instanceOf(sticky, Sticky)
-                                            assert.equal(sticky.title, 'title')
-                                            assert.equal(sticky.url(), '/board/test/stack/todo/sticky/title')
+                                            assert.equal(sticky.title, 'title me &$ other')
+                                            assert.equal(sticky.url(), '/board/test/stack/todo/sticky/title-me-%26')
                                         },
                                         'when removing sticky from the stack': {
                                             'topic': function(sticky) {
@@ -124,7 +125,7 @@ vows.describe('A boards db').addBatch({
                                             'When fetching sticky': {
                                                 'topic': function() {
                                                     new Stack(db, {name: 'todo', board: {name: 'test'}})
-                                                    .get({title: 'title'}, this.callback)
+                                                    .get({slug: 'title-me-%26'}, this.callback)
                                                 },
                                                 'it should return null': function(err, sticky) {
                                                     assert.isEmpty(sticky)
@@ -145,7 +146,8 @@ vows.describe('A boards db').addBatch({
         topic: function() {
             var self = this
             var fill = function(cb) {
-                new Boards(db2, function(err, boards) {
+                new Boards(db2)
+                    .init(function(err, boards) {
                     var todo = 12
                       , done = function() {
                         if(--todo == 0) cb(null, boards)
