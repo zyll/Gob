@@ -28,6 +28,7 @@ boards.on('board:save', function(data) {
 
 var server = express.createServer(
     express.static(__dirname + '/public'),
+    express.logger(),
     express.bodyParser(),
     express.router(function(app) {
 
@@ -131,7 +132,6 @@ var server = express.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack', function(req, res, next) {
-            console.log(req.params.stack, req.params.board)
             new Board(db, {slug: escape(req.params.board)})
                 .get({slug: escape(req.params.stack)}, function(err, stack) {
                     if(!err && stack) {
@@ -146,9 +146,7 @@ var server = express.createServer(
          * Get form to create a Sticky
          */
         app.get('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            jade.renderFile(tpls + '/stickies/form.jade', function(err, html) {
-               res.end(html)
-            })
+            res.render('stickies/form')
         })
 
         /**
@@ -157,17 +155,15 @@ var server = express.createServer(
          * @return 404 Not found, board or stack doesn't exist.
          */
         app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            new Board(db, {slug: req.body.board})
-                .get({slug: stack}, function(err, stack) {
+            new Board(db, {slug: escape(req.body.board)})
+                .get({slug: escape(stack)}, function(err, stack) {
                     if(!err && stack) {
-                        new Sticky(db, {name: req.body.sticky, stack: stack})
+                        new Sticky(db, {name: escape(req.body.sticky), stack: stack})
                             .save(function(err, sticky) {
-                                res.writeHead(302, {'Location': sticky.url()});
-                                res.end();
+                                res.redirect(sticky.url());
                             })
                     } else {
-                        res.writeHead(500)
-                        res.end()
+                        res.send(500)
                     }
             })
         })
@@ -178,19 +174,16 @@ var server = express.createServer(
          */
         app.get('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
             new Sticky(db, {
-                name: req.params.sticky,
+                name: escape(req.params.sticky),
                 stack: {
-                    name: req.params.stack,
+                    name: escape(req.params.stack),
                     board: {
-                        name: req.params.board
+                        name: escape(req.params.board)
                 }}}, function(err, sticky) {
                     if(!err && sticky) {
-                        jade.renderFile(tpls + '/stickies/item.jade', {locals: {sticky: sticky}}, function(err, html) {
-                           res.end(html)
-                        })
+                        res.render('stickies/item', {locals: {sticky: sticky}})
                     } else {
-                        res.writeHead(404)
-                        res.send()
+                        res.send(404)
                     }
                 }
             )
@@ -202,11 +195,9 @@ var server = express.createServer(
          * @return 302 Redirect, with the content location pointing to the deployed stack.
          */
         app.post('/board/:board/stack/:stack/deploy', function(req, res, next) {
-            res.writeHead(501)
-            res.end()
+            res.send(501)
         })
-    }),    
-    express.logger()
+    }) 
 )
 server.set('view engine', 'jade');
 
