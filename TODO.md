@@ -5,10 +5,10 @@
 - implement user ability.
 - provide a service to be aware about any change on any type of object (using socket.io for browser agent, or any other kind of notif as email or a human or url callback for a server).
 - do tpl
-- work on include in a tpl
 - backbonise
 - event feedback
 - config file (server port, db conf ...)
 - backlog.
 - test that model return null on not found
-- add http method to get the stack form
+- test .all method on Stack and Board.
+- looks like there is a bug in stack.all view collation (return stack from other board only on some board)
