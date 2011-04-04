@@ -12,9 +12,11 @@ html(lang: "en")
   body
     header
       p ScrumBoard : #{board.name}
-      a(href: '/board/' + board.name + '/deploy') previous
+      a(href: '/board/' + board.slug + '/stack') add stack
     section
-      !{board.data}
+      ul
+        -each stack in board.stacks
+          li!= partial('../stacks/item', {stack: stack})
     section
       article#tplSticky
         header: h2.editable Ticket title
@@ -22,13 +24,8 @@ html(lang: "en")
         footer: p.editable
       section.trash.stack
         ul
-          li ppppppppppppppppppppppppppppppppppppppp
-            br
-              ppppppppppppppppppp
-        
+          li
     aside
       ul
-        li: a#addSticky.button.pink(href: '#') New stickies
-        li: a#deployBoard.button.green(href: '/board/' + board.name + '/deploy') Deploy
-        li: a#saveBoard.button.green(href: '/board/' + board.name) Save
+        //li: a#addSticky.button.pink(href: stacks[0].url) New stickies
     footer: p Design by Zyll and Shoko

@@ -3,10 +3,8 @@
 */
 // Required system libraries
 var http    = require('http')
-  , fs = require('fs')
   , jade = require('jade')
-  , Connect = require('connect')
-  , sys = require('sys')
+  , express = require('express')
   , libBoard = require('./lib')
   , io = require('socket.io')
   , Boards = libBoard.Boards
@@ -28,18 +26,16 @@ boards.on('board:save', function(data) {
 })
 */
 
-var server = Connect.createServer(
-    Connect.static(__dirname + '/public'),
-    Connect.bodyParser(),
-    Connect.router(function(app) {
+var server = express.createServer(
+    express.static(__dirname + '/public'),
+    express.bodyParser(),
+    express.router(function(app) {
 
         /**
         * Home
         */
         app.get('/', function(req, res, next) {
-            jade.renderFile(tpls + '/home.jade', function(err, html) {
-               res.end(html)
-            })
+            res.render('home')
         })
 
         /**
@@ -47,10 +43,7 @@ var server = Connect.createServer(
          */
         app.get('/boards', function(req, res, next) {
             boards.all(function(err, boards) {
-                // maah... won't have any error here :)
-                jade.renderFile(tpls + '/boards/all.jade', {locals: {boards: boards}}, function(err, html) {
-                   res.end(html)
-                })
+                res.render('boards/all', {locals: {boards: boards}})
             })
         })
 
@@ -58,9 +51,7 @@ var server = Connect.createServer(
          * Get form to create a board
          */
         app.get('/board', function(req, res, next) {
-            jade.renderFile(tpls + '/boards/form.jade', function(err, html) {
-               res.end(html)
-            })
+            res.render('boards/form')
         })
 
         /**
@@ -69,10 +60,9 @@ var server = Connect.createServer(
          * @return 302 Redirect on created, content-location headers point to the new board.
          */
         app.post('/board', function(req, res, next) {
-            new Board(db, {name: req.body.name, boards: boards})
+            new Board(db, {name: req.param('name'), boards: boards})
                 .save(function(err, board) {
-                    res.writeHead(302, {'Location': board.url()});
-                    res.end();
+                    res.redirect(board.url())
                 })
         })
 
@@ -81,24 +71,40 @@ var server = Connect.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board', function(req, res, next) {
-            boards.get({slug: req.params.board}, function(err, board){
-                if(board) {
-                    jade.renderFile(tpls + '/boards/item.jade', {locals: {board: board}}, function(err, html) {
-                       res.end(html)
+            boards.get({slug: escape(req.param('board'))}, function(err, board) {
+                if(!err && board) {
+                    board.all(function(err, stacks) {
+                        if(stacks.length == 0) {
+                            return res.render('boards/item', {locals: {board: board}, layout: false})
+                        }
+                        board.stacks = stacks
+                        var stack_todo = stacks.length
+                        stacks.forEach(function(stack) {
+                            stack.all(function(err, stickies) {
+                                stack.stickies = stickies
+                                if(--stack_todo < 1) {
+                                    res.render('boards/item', {locals: {board: board}, layout: false})
+                                }
+                            })
+                        })
                     })
                 } else {
-                    res.writeHead(404)
-                    res.send()
+                    res.send(404)
                 }
             })
         })
 
         /**
          * Get form to create a Stack
+         * @return 404 Not found, board doesn't exist.
          */
         app.get('/board/:board/stack', function(req, res, next) {
-            jade.renderFile(tpls + '/stacks/form.jade', function(err, html) {
-               res.end(html)
+            boards.get({slug: escape(req.params.board)}, function(err, board) {
+                if(err || !board) {
+                    res.send(404)
+                } else {
+                    res.render('stacks/form', {locals: {board: board}})
+                }
             })
         })
 
@@ -108,15 +114,13 @@ var server = Connect.createServer(
          * @return 404 Not found, board doesn't exist.
          */
         app.post('/board/:board/stack', function(req, res, next) {
-            boards.get({slug: req.body.board}, function(err, board) {
-                if(!board) {
-                    res.writeHead(404)
-                    res.send()
+            boards.get({slug: escape(req.params.board)}, function(err, board) {
+                if(err || !board) {
+                    res.send(404)
                 } else {
                     new Stack(db, {name: req.body.name, board: board})
                         .save(function(err, stack) {
-                            res.writeHead(302, {'Location': stack.url()});
-                            res.end();
+                            res.redirect(stack.url())
                         })
                 }
             })
@@ -127,20 +131,14 @@ var server = Connect.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack', function(req, res, next) {
-            new Stack(db, {
-                    slug: req.params.stack,
-                    board: {
-                        slug: req.params.board
+            console.log(req.params.stack, req.params.board)
+            new Board(db, {slug: escape(req.params.board)})
+                .get({slug: escape(req.params.stack)}, function(err, stack) {
+                    if(!err && stack) {
+                        res.render('stacks/item.jade', {locals: {stack: stack}})
+                    } else {
+                        res.send(404)
                     }
-                }, function(err, stack) {
-                if(stack) {
-                    jade.renderFile(tpls + '/stacks/item.jade', {locals: {stack: stack}}, function(err, html) {
-                       res.end(html)
-                    })
-                } else {
-                    res.writeHead(404)
-                    res.send()
-                }
             })
         })
 
@@ -208,8 +206,9 @@ var server = Connect.createServer(
             res.end()
         })
     }),    
-    Connect.logger()
+    express.logger()
 )
+server.set('view engine', 'jade');
 
 boards.init(function(err, res) {
     server.listen(3000);

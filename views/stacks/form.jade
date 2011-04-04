@@ -2,12 +2,12 @@
 html(lang: "en")
   head
     meta(charset: "utf-8")
-    title new Board
+    title new Stack
     script(src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js", type: "text/javascript")
   body
-    header: p New board
+    header: p New stack for board #{board.name}
     section
-      form(method: 'post')
+      form(method: 'post', action: '/board/' + board.slug + '/stack')
         input(type: 'text', name: 'name')
         button(type: 'submit') New
     footer: p Design by Zyll and Shoko

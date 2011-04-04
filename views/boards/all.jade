@@ -1,0 +1,5 @@
+h1 Fligths
+ul
+  - each board in boards
+    li: a(href: board.url()) #{board.name}
+a(href:'/board') Add

@@ -1,0 +1,5 @@
+li.stack(id: stack.slug)
+  h1 #{stack.name}
+  ul.ui-sortable
+    - each sticky in stack.stickies
+      li!= partial('../stickies/item', {sticky: sticky})

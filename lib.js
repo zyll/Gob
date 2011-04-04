@@ -57,72 +57,76 @@ sys.inherits(Boards, events.EventEmitter)
 Boards.client = function(conf) {
     return new(cradle.Connection)().database(conf.name)
 }
+Boards.prototype.migrate = function(cb) {
+    var self = this
+    var todo = 5
+    var done = function(err) {
+        if(--todo == 0) {
+            cb(null, self)
+        }
+    }
+    self.db.create(function(err) {
+        self.db.save('_design/boards', {
+            all: {
+                map: function (doc) {
+                    if (doc.type == 'board' && doc.slug) {
+                        emit({
+                            slug: doc.slug
+                        }, doc)
+                    }
+                }
+            }
+        }, done)
+        self.db.save('_design/stack', {
+            all: {
+                map: function (doc) {
+                    if (doc.type == 'stack' && doc.slug && doc.board) {
+                        emit({
+                            slug: doc.slug,
+                            board: doc.board
+                        }, doc)
+                    };
+                }
+            }
+        }, done)
+        self.db.save('_design/stacks', {
+            all: {
+                map: function (doc) {
+                    if (doc.type == 'stack' && doc.slug && doc.board && doc.board.slug) {
+                        emit([doc.board.slug, doc.slug], doc)
+                    };
+                }
+            }
+        }, done)
+        self.db.save('_design/sticky', {
+            all: {
+                map: function (doc) {
+                    if (doc.type == 'sticky' && doc.slug && doc.stack) {
+                        emit({
+                            slug: doc.slug,
+                            stack: doc.stack
+                        }, doc)
+                    };
+                }
+            }
+        }, done)
+        self.db.save('_design/stickies', {
+            all: {
+                map: function (doc) {
+                    if (doc.type == 'sticky' && doc.slug && doc.stack && doc.stack.slug && doc.stack.board && doc.stack.board.slug) {
+                        emit([doc.stack.board.slug, doc.stack.slug, doc.slug], doc)
+                    };
+                }
+            }
+        }, done)
+    })
+}
 
 Boards.prototype.init = function(cb) {
     var self = this
     this.db.exists(function(err, res) {
         if(!res) {
-            var todo = 5
-            var done = function(err) {
-                if(--todo == 0) {
-                    cb(null, self)
-                }
-            }
-            self.db.create(function(err) {
-                self.db.save('_design/boards', {
-                    all: {
-                        map: function (doc) {
-                            if (doc.type == 'board' && doc.slug) {
-                                emit({
-                                    slug: doc.slug
-                                }, doc)
-                            }
-                        }
-                    }
-                }, done)
-                self.db.save('_design/stack', {
-                    all: {
-                        map: function (doc) {
-                            if (doc.type == 'stack' && doc.slug && doc.board) {
-                                emit({
-                                    slug: doc.slug,
-                                    board: doc.board
-                                }, doc)
-                            };
-                        }
-                    }
-                }, done)
-                self.db.save('_design/stacks', {
-                    all: {
-                        map: function (doc) {
-                            if (doc.type == 'stack' && doc.slug && doc.board && doc.board.slug) {
-                                emit([doc.board.slug, doc.slug], doc)
-                            };
-                        }
-                    }
-                }, done)
-                self.db.save('_design/sticky', {
-                    all: {
-                        map: function (doc) {
-                            if (doc.type == 'sticky' && doc.slug && doc.stack) {
-                                emit({
-                                    slug: doc.slug,
-                                    stack: doc.stack
-                                }, doc)
-                            };
-                        }
-                    }
-                }, done)
-                self.db.save('_design/stickies', {
-                    all: {
-                        map: function (doc) {
-                            if (doc.type == 'sticky' && doc.slug && doc.stack && doc.stack.slug && doc.stack.board && doc.stack.board.slug) {
-                                emit([doc.stack.board.slug, doc.stack.slug, doc.slug], doc)
-                            };
-                        }
-                    }
-                }, done)
-            })
+            self.migrate(cb)
         } else {
             cb(null, self)
         }
@@ -187,6 +191,7 @@ var Board = function(db, data) {
     this.rev = data._rev
     this.boards = typeof(data.boards) == 'object' ? new  Boards(db, data.boards) : data.boards
     this.db = db
+    this.stacks = data.stacks || []
 }
 sys.inherits(Board, events.EventEmitter)
 Slugify(Board, 'name', 'boards')
@@ -209,7 +214,7 @@ Board.prototype.all = function(cb) {
     var self = this
 
     this.db.view('stacks/all',
-                 {startkey: [this.slug], endkey: [this.slug, {}]},
+                 {startkey: [this.slug], endkey: [[this.slug, {}]]},
                  function(err, res) {
         if(err || res.length == 0) {
             cb(err, res)
@@ -279,6 +284,7 @@ var Stack = function(db, data) {
     this.id = data._id
     this.rev = data._rev
     this.board = typeof(data.board) == 'object' ? new  Board(db, data.board) : data.board
+    this.stickies = data.stickies || []
 }
 sys.inherits(Stack, events.EventEmitter)
 Slugify(Stack, 'name', 'board')
