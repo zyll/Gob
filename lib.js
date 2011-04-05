@@ -214,7 +214,7 @@ Board.prototype.all = function(cb) {
     var self = this
 
     this.db.view('stacks/all',
-                 {startkey: [this.slug], endkey: [[this.slug, {}]]},
+                 {startkey: [this.slug], endkey: [this.slug, {}]},
                  function(err, res) {
         if(err || res.length == 0) {
             cb(err, res)
@@ -336,7 +336,7 @@ Stack.prototype.include = function() {
 Stack.prototype.all = function(cb) {
     var self = this
     this.db.view('stickies/all',
-                 {startkey: [this.board.slug, this.slug], endkey: [[this.board.slug, this.slug, {}]]},
+                 {startkey: [this.board.slug, this.slug], endkey: [this.board.slug, this.slug, {}]},
                  function(err, res) {
         if(err || res.length == 0) {
             cb(err, res)
