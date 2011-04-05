@@ -17,27 +17,27 @@ function Slugify(obj, prop, parent) {
     obj.prototype.slugging = function(cb) {
         var self = this
         //var slug = escape(this[prop].substring(0, 10))
-        var slug = escape(this[prop].substring(0, 10)).replace(/\%20/g, '-')
-        var base_slug = slug
-        var acc = 0
-        var parent_slug = this[parent].slug || this[parent].name || ''
-        var find_it = function() {
-            if(self._in_write_slugging.indexOf(parent_slug + '/' + slug) >= 0) {
-                slug = base_slug + (++acc)
-                find_it()
-            } else {
-                self._in_write_slugging.push(parent_slug + '/' + slug)
-                self[parent].get({slug: slug}, function(err, res) {
-                    if(res.length > 0) {
-                        delete self._in_write_slugging.indexOf((parent_slug) + '/' + slug)
-                        slug = base_slug + (++acc)
-                        find_it()
-                    } else {
-                        cb(slug)
-                    }
-                })
+          , slug = escape(this[prop].substring(0, 10)).replace(/\%20/g, '-')
+          , base_slug = slug
+          , acc = 0
+          , parent_slug = this[parent].slug
+          , find_it = function() {
+                if(self._in_write_slugging.indexOf(parent_slug + '/' + slug) >= 0) {
+                    slug = base_slug + '-' + (++acc)
+                    find_it()
+                } else {
+                    self._in_write_slugging.push(parent_slug + '/' + slug)
+                    self[parent].get({slug: slug}, function(err, res) {
+                        if(res) {
+                            delete self._in_write_slugging.indexOf((parent_slug) + '/' + slug)
+                            slug = base_slug + '-' + (++acc)
+                            find_it()
+                        } else {
+                            cb(slug)
+                        }
+                    })
+                }
             }
-        }
         find_it()
     }
 }
@@ -168,7 +168,7 @@ Boards.prototype.get = function(key, cb) {
     var self = this
     this.db.view('boards/all', {key: key}, function(err, res) {
         if(err || res.length == 0) {
-            cb(err, res)
+            cb(err, null)
         } else {
             var board = new Board(self.db, res[0].value)
             board.boards = self
@@ -203,9 +203,11 @@ Board.prototype.get = function(key, cb) {
                  {key: key},
                  function(err, res) {
                      if(err || res.length == 0) {
-                         cb(err, res)
+                         cb(err, null)
                      } else {
-                         cb(err, new Stack(self.db, res[0].value))
+                         var s = new Stack(self.db, res[0].value)
+                         self.add(s)
+                         cb(err, s)
                      }
                  })
 }
@@ -220,7 +222,9 @@ Board.prototype.all = function(cb) {
             cb(err, res)
         } else {
             cb(err, res.map(function(stack) {
-                return new Stack(self.db, stack)
+                var s = new Stack(self.db, stack)
+                self.add(s)
+                return s
             }))
         }
     })
@@ -342,7 +346,9 @@ Stack.prototype.all = function(cb) {
             cb(err, res)
         } else {
             cb(err, res.map(function(sticky) {
-                return new Sticky(self.db, sticky)
+                var s = new Sticky(self.db, sticky)
+                self.add(s)
+                return s
             }))
         }
     })
@@ -355,9 +361,11 @@ Stack.prototype.get = function(key, cb) {
                  {key: key},
                  function(err, res) {
         if(err || res.length == 0) {
-            cb(err, res)
+            cb(err, null)
         } else {
-            cb(err, new Sticky(self.db, res[0].value))
+            var s = new Sticky(self.db, res[0].value)
+            self.add(s)
+            cb(err, s)
         }
     })
 }
@@ -398,7 +406,7 @@ Sticky.prototype.save = function(cb) {
                 if(!err) {
                     self.id = res.id
                 }
-                delete self._in_write_slugging[self._in_write_slugging.indexOf(data.stack.name+'/'+slug)]
+                delete self._in_write_slugging[self._in_write_slugging.indexOf(data.stack.slug+'/'+slug)]
                 cb(err, self)
             }) 
         })

@@ -146,7 +146,14 @@ var server = express.createServer(
          * Get form to create a Sticky
          */
         app.get('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            res.render('stickies/form')
+            new Board(db, {slug: escape(req.params.board)})
+                .get({slug: escape(req.params.stack)}, function(err, stack) {
+                    if(!err && stack) {
+                        res.render('stickies/form', {locals: {stack: stack}})
+                    } else {
+                        res.send(404)
+                    }
+            })
         })
 
         /**
@@ -155,10 +162,14 @@ var server = express.createServer(
          * @return 404 Not found, board or stack doesn't exist.
          */
         app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            new Board(db, {slug: escape(req.body.board)})
-                .get({slug: escape(stack)}, function(err, stack) {
+            new Board(db, {slug: escape(req.params.board)})
+                .get({slug: escape(req.params.stack)}, function(err, stack) {
                     if(!err && stack) {
-                        new Sticky(db, {name: escape(req.body.sticky), stack: stack})
+                        new Sticky(db, {
+                            title: escape(req.body.title),
+                            content: req.body.content,
+                            user: req.body.user,
+                            stack: stack})
                             .save(function(err, sticky) {
                                 res.redirect(sticky.url());
                             })
@@ -173,20 +184,17 @@ var server = express.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
-            new Sticky(db, {
-                name: escape(req.params.sticky),
-                stack: {
-                    name: escape(req.params.stack),
+            new Stack(db, {
+                    slug: escape(req.params.stack),
                     board: {
-                        name: escape(req.params.board)
-                }}}, function(err, sticky) {
-                    if(!err && sticky) {
-                        res.render('stickies/item', {locals: {sticky: sticky}})
-                    } else {
-                        res.send(404)
-                    }
-                }
-            )
+                        slug: escape(req.params.board)
+                }}).get({slug: escape(req.params.sticky)}, function(err, sticky) {
+                            if(!err && sticky) {
+                                res.render('stickies/item', {locals: {sticky: sticky}})
+                            } else {
+                                res.send(404)
+                            }
+                })
         })
 
         /**

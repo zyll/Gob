@@ -11,4 +11,3 @@
 - backlog.
 - test that model return null on not found
 - test .all method on Stack and Board.
-- looks like there is a bug in stack.all view collation (return stack from other board only on some board)

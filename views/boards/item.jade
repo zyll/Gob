@@ -27,5 +27,6 @@ html(lang: "en")
           li
     aside
       ul
-        //li: a#addSticky.button.pink(href: stacks[0].url) New stickies
+        - if (board.stacks.length)
+          li: a#addSticky.button.pink(href: board.stacks[0].url() + '/sticky') New stickies
     footer: p Design by Zyll and Shoko

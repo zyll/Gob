@@ -1,13 +1,11 @@
-!!! 5
-html(lang: "en")
-  head
-    meta(charset: "utf-8")
-    title new Board
-    script(src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js", type: "text/javascript")
-  body
-    header: p New board
-    section
-      form(method: 'post')
-        input(type: 'text', name: 'name')
-        button(type: 'submit') New
-    footer: p Design by Zyll and Shoko
+section
+  h1 stack: #{stack.name}
+  p add sticky
+  form(method: 'post')
+    div: label title
+      input(type: 'text', name: 'title')
+    div: label content
+      input(type: 'text', name: 'content')
+    div: label user
+      input(type: 'text', name: 'user')
+    button(type: 'submit') New

@@ -128,7 +128,7 @@ vows.describe('A boards db').addBatch({
                                                     .get({slug: 'title-me-%26'}, this.callback)
                                                 },
                                                 'it should return null': function(err, sticky) {
-                                                    assert.isEmpty(sticky)
+                                                    assert.isNull(sticky)
                                                 }
                                             }
                                         }
@@ -189,7 +189,8 @@ vows.describe('A boards db').addBatch({
             },
             'when searching the todo stack': {
                 'topic': function(board) {
-                    board.get({slug: 'deploy'}, this.callback)
+                    new Board(db2, {slug: 'test2'})
+                        .get({slug: 'deploy'}, this.callback)
                 },
                 'it should return the todo stack for this board': function(err, stack) {
                     assert.isNull(err)
@@ -197,7 +198,7 @@ vows.describe('A boards db').addBatch({
                 },
                 'when getting the sticky': {
                     'topic': function(stack) {
-                        stack.get({slug: 'test2deplo1'}, this.callback)
+                        stack.get({slug: 'test2deplo-1'}, this.callback)
                     },
                     'it should return the sticky': function(err, sticky) {
                         assert.isNull(err)
@@ -212,8 +213,9 @@ vows.describe('A boards db').addBatch({
                         assert.isNull(err)
                         assert.equal(stickies.length, 2)
                         stickies.forEach(function(s) {
-                            assert.ok(s.slug.match(/^test2(deplo|todo(A|B)|progr)1?$/))
+                            assert.ok(s.slug.match(/^test2(deplo|todo(A|B)|progr)(\-\d)?$/))
                         })
+                        assert.isFalse((stickies[0].slug == stickies[1].slug))
                     }
                 }
             }
