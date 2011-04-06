@@ -5,7 +5,7 @@
 var http    = require('http')
   , jade = require('jade')
   , express = require('express')
-  , libBoard = require('./lib')
+  , libBoard = require('./model/board')
   , io = require('socket.io')
   , Boards = libBoard.Boards
   , Board  = libBoard.Board
@@ -14,8 +14,7 @@ var http    = require('http')
 
     require("socket.io-connect");
 
-var tpls = __dirname + '/jade'
-  , db = Boards.client({name: 'dev_boards'})
+var db = Boards.client({name: 'dev_boards'})
   // make it globals (is that a fixme ?)
   , boards = new Boards(db)
 
