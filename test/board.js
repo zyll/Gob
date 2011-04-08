@@ -268,7 +268,40 @@ vows.describe('Model.Board').addBatch({
             }
         }
     }
+}).addBatch({
+    'Given the stack "todo" the board "myboard" on "board_test_board"': {
+        topic: function() {
+            new (new Model({name: 'board_test_board'}).Stack)({parent: {slug: 'myboard'}})
+                .get('todo', this.callback)
+        },
+        'when a stack named "todo"': {
+            topic: function(err, stack) {
+                stack.stikiesAdd(new stack.model.Sticky({title: 'something'}))
+                stack.save(this.callback)
+            },
+            'it should return a stack with a stickyck in its stickizs list': function(err, stack) {
+                assert.equal(sticky.stickies.length, 1)
+                assert.instanceOf(stack.stickies[0], Model.Sticky)
+            },
+            'when getting the "todo" stack': {
+                topic: function(err, stack) {
+                    stack.get("todo", this.callback)
+                },
+                'it should return that stack': function(err, stack) {
+                    assert.instanceOf(stack, Model.Stack)
+                    assert.equal(stack.name, "todo")
+                    assert.equal(stack.slug, "todo")
+                },
+                'it should have a the sticky': function(err, stack) {
+                    assert.equal(stack.stickies.length, 1)
+                    assert.instanceOf(stack.stickies[0], Model.Sticky)
+                    assert.equal(stack.stickies[0].title, "something")
+                }
+            }
+        }
+    }
 })
+
 .addBatch({
     'Given cleaning db from test': {
         topic: function() {
