@@ -188,6 +188,17 @@ Model.Board = function(model, data) {
         this.stacks = []
     }*/
 }
+Model.Board.prototype.asData = function(cb) {
+    return {
+        type: 'board',
+        name: this.name,
+        slug: this.slug,
+        stacks: this.stacks.map(function(stack) {
+            return stack.asData()
+        })
+    }
+}
+
 Slugify(Model.Board, 'name')
 Compose(Model.Board, 'stacks', 'Stack')
 /** 
@@ -197,11 +208,7 @@ Compose(Model.Board, 'stacks', 'Stack')
  */
 Model.Board.prototype.save = function(cb) {
     var self = this
-    var data = {
-        type: 'board',
-        name: this.name,
-        slug: this.slug
-    } 
+    var data = this.asData()
     if(this.id) {
         this.model.db.save(this.id, data, function(err, res) {
             cb(err, self)
@@ -227,9 +234,6 @@ Model.Board.prototype.get = function(slug, cb) {
     this.model.db.view('boards/by_slug',
                  {key: slug},
                  function(err, res) {
-                     console.log('======------------>')
-                     console.log(res)
-                     console.log('<-----=============')
                      if(err || res.length == 0) {
                          cb(err, null)
                      } else {
@@ -270,6 +274,17 @@ Model.Stack = function(model, data) {
     this.parent = data.parent
     this.stickiesSet(data)
 }
+Model.Stack.prototype.asData = function(cb) {
+    return {
+        type: 'stack',
+        name: this.name,
+        slug: this.slug,
+        stickies: this.stickies.map(function(stickies) {
+            return stickes.asData()
+        })
+    }
+}
+
 Slugify(Model.Stack, 'name', 'board')
 Compose(Model.Stack, 'stickies', 'Sticky')
 
@@ -311,6 +326,17 @@ Model.Sticky = function(model, data) {
     this.rev = data._rev || null
     this.parent = data.parent || null
 }
+
+Model.Sticky.prototype.asData = function(cb) {
+    return {
+        type: 'sticky',
+        slug: this.slug,
+        title: this.title,
+        content: this.slug,
+        user: this.user
+    }
+}
+
 Slugify(Model.Sticky, 'title', 'stack')
 
 Model.Sticky.prototype.all = function(cb) {
@@ -352,12 +378,7 @@ Stack.prototype.add = function(sticky) {
 
 Stack.prototype.save = function(cb) {
     var self = this
-    var data = {
-        type: 'stack',
-        board: this.board.include(),
-        name: this.name,
-        slug: this.slug
-    }
+    var data = this.asData()
     if(this.id) {
         this.db.save(this.id, data, function(err, res) {
             cb(err, self)

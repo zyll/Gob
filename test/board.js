@@ -250,7 +250,6 @@ vows.describe('Model.Board').addBatch({
             'it should return a board with a stack in its stacks list': function(err, board) {
                 assert.equal(board.stacks.length, 1)
                 assert.instanceOf(board.stacks[0], Model.Stack)
-                console.log(board)
             },
             'when getting the "myboard" board': {
                 topic: function(err, board) {
@@ -262,10 +261,9 @@ vows.describe('Model.Board').addBatch({
                     assert.equal(board.slug, "myboard")
                 },
                 'it should have a the stack': function(err, board) {
-                    console.log(board)
                     assert.equal(board.stacks.length, 1)
                     assert.instanceOf(board.stacks[0], Model.Stack)
-                    assert.equal(board.stacks[0].name, "myboard")
+                    assert.equal(board.stacks[0].name, "todo")
                 }
             }
         }
