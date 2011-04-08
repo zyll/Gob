@@ -2,6 +2,7 @@
   "dependencies": {
     "express": "",
     "cradle": "",
+    "futures": "",
     "socket.io-connect": ""
   },
   "directories": {

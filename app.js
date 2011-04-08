@@ -5,14 +5,15 @@
 var http    = require('http')
   , jade = require('jade')
   , express = require('express')
-  , libBoard = require('./model/board')
   , io = require('socket.io')
+  
+  , libBoard = require('./model/board')
   , Boards = libBoard.Boards
   , Board  = libBoard.Board
   , Stack  = libBoard.Stack
   , Sticky = libBoard.Sticky
 
-    require("socket.io-connect");
+    require("socket.io-connect"); // ???
 
 var db = Boards.client({name: 'dev_boards'})
   // make it globals (is that a fixme ?)
