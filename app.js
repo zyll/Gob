@@ -7,17 +7,11 @@ var http    = require('http')
   , express = require('express')
   , io = require('socket.io')
   
-  , libBoard = require('./model/board')
-  , Boards = libBoard.Boards
-  , Board  = libBoard.Board
-  , Stack  = libBoard.Stack
-  , Sticky = libBoard.Sticky
+  , Model = require('./models/board')
 
     require("socket.io-connect"); // ???
 
-var db = Boards.client({name: 'dev_boards'})
-  // make it globals (is that a fixme ?)
-  , boards = new Boards(db)
+var model = new Model({name: 'dev_boards'})
 
   /*
 * @todo rely on an object to catch save event
@@ -43,9 +37,10 @@ var server = express.createServer(
          * Boards list
          */
         app.get('/boards', function(req, res, next) {
-            boards.all(function(err, boards) {
-                res.render('boards/all', {locals: {boards: boards}})
-            })
+            new model.Board()
+                .all(function(err, boards) {
+                    res.render('boards/all', {locals: {boards: boards}})
+                })
         })
 
         /**
@@ -61,7 +56,7 @@ var server = express.createServer(
          * @return 302 Redirect on created, content-location headers point to the new board.
          */
         app.post('/board', function(req, res, next) {
-            new Board(db, {name: req.param('name'), boards: boards})
+            new model.Board({name: req.param('name')})
                 .save(function(err, board) {
                     res.redirect(board.url())
                 })
@@ -72,23 +67,10 @@ var server = express.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board', function(req, res, next) {
-            boards.get({slug: escape(req.param('board'))}, function(err, board) {
+            new model.Board()
+                .get(escape(req.params.board), function(err, board) {
                 if(!err && board) {
-                    board.all(function(err, stacks) {
-                        if(stacks.length == 0) {
-                            return res.render('boards/item', {locals: {board: board}, layout: false})
-                        }
-                        board.stacks = stacks
-                        var stack_todo = stacks.length
-                        stacks.forEach(function(stack) {
-                            stack.all(function(err, stickies) {
-                                stack.stickies = stickies
-                                if(--stack_todo < 1) {
-                                    res.render('boards/item', {locals: {board: board}, layout: false})
-                                }
-                            })
-                        })
-                    })
+                    return res.render('boards/item', {locals: {board: board}, layout: false})
                 } else {
                     res.send(404)
                 }
@@ -100,7 +82,8 @@ var server = express.createServer(
          * @return 404 Not found, board doesn't exist.
          */
         app.get('/board/:board/stack', function(req, res, next) {
-            boards.get({slug: escape(req.params.board)}, function(err, board) {
+            new model.Board()
+                .get(escape(req.params.board), function(err, board) {
                 if(err || !board) {
                     res.send(404)
                 } else {
@@ -115,12 +98,13 @@ var server = express.createServer(
          * @return 404 Not found, board doesn't exist.
          */
         app.post('/board/:board/stack', function(req, res, next) {
-            boards.get({slug: escape(req.params.board)}, function(err, board) {
+            new model.Board()
+                .get(escape(req.params.board), function(err, board) {
                 if(err || !board) {
                     res.send(404)
                 } else {
-                    new Stack(db, {name: req.body.name, board: board})
-                        .save(function(err, stack) {
+                    board.stacksAdd(new model.Stack({name: req.body.name}))
+                    board.save(function(err, stack) {
                             res.redirect(stack.url())
                         })
                 }
@@ -132,8 +116,8 @@ var server = express.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack', function(req, res, next) {
-            new Board(db, {slug: escape(req.params.board)})
-                .get({slug: escape(req.params.stack)}, function(err, stack) {
+            new model.Stack({parent:{slug: escape(req.params.board)}})
+                .get(escape(req.params.stack), function(err, stack) {
                     if(!err && stack) {
                         res.render('stacks/item.jade', {locals: {stack: stack}})
                     } else {
@@ -146,8 +130,8 @@ var server = express.createServer(
          * Get form to create a Sticky
          */
         app.get('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            new Board(db, {slug: escape(req.params.board)})
-                .get({slug: escape(req.params.stack)}, function(err, stack) {
+            new model.Stack({parent: {slug: escape(req.params.board)}})
+                .get(escape(req.params.stack), function(err, stack) {
                     if(!err && stack) {
                         res.render('stickies/form', {locals: {stack: stack}})
                     } else {
@@ -162,20 +146,27 @@ var server = express.createServer(
          * @return 404 Not found, board or stack doesn't exist.
          */
         app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            new Board(db, {slug: escape(req.params.board)})
-                .get({slug: escape(req.params.stack)}, function(err, stack) {
-                    if(!err && stack) {
-                        new Sticky(db, {
-                            title: escape(req.body.title),
-                            content: req.body.content,
-                            user: req.body.user,
-                            stack: stack})
-                            .save(function(err, sticky) {
-                                res.redirect(sticky.url());
-                            })
-                    } else {
-                        res.send(500)
+            new model.Board()
+                .get(escape(req.params.board), function(err, board) {
+                if(!err && board) {
+                    var stack = board.stacksGet(escape(req.params.stack))
+                    if(!stack) {
+                        return res.send(404)
                     }
+                    var sticky = new model.Sticky({
+                        title: req.body.title,
+                        content: req.body.content,
+                        user: req.body.user,
+                        stack: stack
+                    })
+                    stack.stickiesAdd(sticky)
+                    board.save(function(err, board) {
+                        if(err) {
+                            return res.send(500)
+                        }
+                        res.redirect(sticky.url());
+                    })
+                } else return res.send(404)
             })
         })
 
@@ -184,17 +175,20 @@ var server = express.createServer(
          * @return 404 Not Found if it doesn't exist
          */
         app.get('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
-            new Stack(db, {
+            new model.Sticky({
+                parent: {
                     slug: escape(req.params.stack),
-                    board: {
+                    parent: {
                         slug: escape(req.params.board)
-                }}).get({slug: escape(req.params.sticky)}, function(err, sticky) {
-                            if(!err && sticky) {
-                                res.render('stickies/item', {locals: {sticky: sticky}})
-                            } else {
-                                res.send(404)
-                            }
-                })
+                    }
+                }
+            }).get(escape(req.params.sticky), function(err, sticky) {
+                if(!err && sticky) {
+                    res.render('stickies/item', {locals: {sticky: sticky}})
+                } else {
+                    res.send(404)
+                }
+            })
         })
 
         /**
@@ -209,7 +203,7 @@ var server = express.createServer(
 )
 server.set('view engine', 'jade');
 
-boards.init(function(err, res) {
+model.createDB(function(err, res) {
     server.listen(3000);
     console.log('up and ready on http://localhost:3000')
 })

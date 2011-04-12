@@ -147,13 +147,6 @@ Model.prototype.createDB = function(cb) {
 }
 
 /**
- * Remove the db (mainly for test cleanup urpose).
- */
-Model.prototype.removeDB = function(cb) {
-    this.db.destroy(cb)
-}
-
-/**
  * Give an object (obj) the ability to load a collection in a properties (prop)).
  * this collection can be pur json or even Object (kind).
  * if not object data will be encapse as the mentioned object (kind).
@@ -301,6 +294,10 @@ Model.Board.prototype.all = function(cb) {
     })
 }
 
+Model.Board.prototype.url = function() {
+    return '/board/' + this.slug
+}
+
 /**
  * a Stack.
  * @param [String] stack name
@@ -359,6 +356,11 @@ Model.Stack.prototype.get = function(key, cb) {
     })
 }
 
+Model.Stack.prototype.url = function() {
+    return ['/board', this.parent.slug,
+            'stack', this.slug].join('/')
+}
+
 Model.Sticky = function(model, data) {
     this.model = model
     this.slug = data.slug || null
@@ -410,7 +412,11 @@ Model.Sticky.prototype.get = function(key, cb) {
     })
 }
 
-
+Model.Sticky.prototype.url = function() {
+    return ['/board', this.parent.parent.slug,
+            'stack', this.parent.slug,
+            'sticky', this.slug].join('/')
+}
 
 
 var Stack = function() {}
@@ -436,10 +442,6 @@ Stack.prototype.save = function(cb) {
     }
 }
 
-Stack.prototype.url = function() {
-    return ['/board', this.board.slug,
-            'stack', this.slug].join('/')
-}
 
 Stack.prototype.include = function() {
     return {
@@ -481,11 +483,7 @@ Sticky.prototype.save = function(cb) {
     }
 }
 
-Sticky.prototype.url = function() {
-    return ['/board', this.stack.board.slug,
-            'stack', this.stack.slug,
-            'sticky', this.slug].join('/')
-}
+
 
 Sticky.prototype.remove = function(cb) {
     if(this.id && this.rev) {
@@ -525,9 +523,6 @@ Board.prototype.add = function(stack) {
 
 
 
-Board.prototype.url = function() {
-    return '/board/' + this.slug
-}
 
 Board.prototype.include = function() {
     return {slug: this.slug}
