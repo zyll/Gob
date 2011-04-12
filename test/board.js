@@ -239,8 +239,9 @@ vows.describe('Model.Board').addBatch({
 .addBatch({
     'Given the board "myboard" on "board_test_board"': {
         topic: function() {
-            new (new Model({name: 'board_test_board'}).Board)()
-                .get('myboard', this.callback)
+            var model = new Model({name: 'board_test_board'})
+            var board = new model.Board()
+            board.get('myboard', this.callback)
         },
         'when adding a stack named "todo"': {
             topic: function(err, board) {
@@ -250,6 +251,9 @@ vows.describe('Model.Board').addBatch({
             'it should return a board with a stack in its stacks list': function(err, board) {
                 assert.equal(board.stacks.length, 1)
                 assert.instanceOf(board.stacks[0], Model.Stack)
+            },
+            'it should return generate a stack slug': function(err, board) {
+                assert.equal(board.stacks[0].slug, 'todo')
             },
             'when getting the "myboard" board': {
                 topic: function(err, board) {
@@ -264,35 +268,38 @@ vows.describe('Model.Board').addBatch({
                     assert.equal(board.stacks.length, 1)
                     assert.instanceOf(board.stacks[0], Model.Stack)
                     assert.equal(board.stacks[0].name, "todo")
+                    assert.equal(board.stacks[0].slug, "todo")
                 }
             }
         }
     }
 }).addBatch({
-    'Given the stack "todo" the board "myboard" on "board_test_board"': {
+    'Given the board "myboard" for "board_test_board"': {
         topic: function() {
-            new (new Model({name: 'board_test_board'}).Stack)({parent: {slug: 'myboard'}})
-                .get('todo', this.callback)
+            var model  = new Model({name: 'board_test_board'})
+            new model.Board()
+                .get('myboard', this.callback)
         },
-        'when a stack named "todo"': {
-            topic: function(err, stack) {
-                stack.stikiesAdd(new stack.model.Sticky({title: 'something'}))
-                stack.save(this.callback)
+        'when adding &  stack named "todo"': {
+            topic: function(err, board) {
+                board.stacksGet('todo').stickiesAdd(new board.model.Sticky({title: 'something'}))
+                board.save(this.callback)
             },
-            'it should return a stack with a stickyck in its stickizs list': function(err, stack) {
-                assert.equal(sticky.stickies.length, 1)
-                assert.instanceOf(stack.stickies[0], Model.Sticky)
+            'it should return a board with a sticky in its stickies list': function(err, board) {
+                assert.equal(board.stacksGet('todo').stickies.length, 1)
+                assert.instanceOf(board.stacks[0].stickies[0], Model.Sticky)
+                assert.equal(board.stacks[0].stickies[0].slug, 'something')
             },
             'when getting the "todo" stack': {
-                topic: function(err, stack) {
-                    stack.get("todo", this.callback)
+                topic: function(err, board) {
+                    return board.stacksGet("todo")
                 },
-                'it should return that stack': function(err, stack) {
+                'it should return that stack': function(stack) {
                     assert.instanceOf(stack, Model.Stack)
                     assert.equal(stack.name, "todo")
                     assert.equal(stack.slug, "todo")
                 },
-                'it should have a the sticky': function(err, stack) {
+                'it should have a the sticky': function(stack) {
                     assert.equal(stack.stickies.length, 1)
                     assert.instanceOf(stack.stickies[0], Model.Sticky)
                     assert.equal(stack.stickies[0].title, "something")
@@ -300,9 +307,65 @@ vows.describe('Model.Board').addBatch({
             }
         }
     }
-})
-
-.addBatch({
+}).addBatch({
+    'Given the board "myboard" for "board_test_board"': {
+        topic: function() {
+            var model  = new Model({name: 'board_test_board'})
+            new model.Board()
+                .get('myboard', this.callback)
+        },
+        'when adding a second sticky named "something" to the "todo" stack': {
+            topic: function(err, board) {
+                board.stacksGet('todo').stickiesAdd(new board.model.Sticky({title: 'something'}))
+                board.save(this.callback)
+            },
+            'it should return a board with a sticky "something-2"  as the 2scd stickies in the list': function(err, board) {
+                assert.equal(board.stacksGet('todo').stickies.length, 2)
+                assert.instanceOf(board.stacks[0].stickies[1], Model.Sticky)
+                assert.equal(board.stacks[0].stickies[1].slug, 'something-1')
+            },
+            'when getting the "todo" stack': {
+                topic: function(err, board) {
+                    return board.stacksGet("todo")
+                },
+                'it should have the sticky': function(stack) {
+                    assert.equal(stack.stickies.length, 2)
+                    assert.instanceOf(stack.stickies[1], Model.Sticky)
+                    assert.equal(stack.stickies[1].title, "something")
+                    assert.equal(stack.stickies[1].slug, "something-1")
+                }
+            }
+        }
+    }
+}).addBatch({
+    'Given the board "myboard" for "board_test_board"': {
+        topic: function() {
+            var model  = new Model({name: 'board_test_board'})
+            new model.Board()
+                .get('myboard', this.callback)
+        },
+        'when adding 10 sticky named "something" to the "todo" stack': {
+            topic: function(err, board) {
+                for(var i = 0; i < 10; i++) {
+                    board.stacksGet('todo').stickiesAdd(new board.model.Sticky({title: 'something'}))
+                }
+                board.save(this.callback)
+            },
+            'it should return a board with all stickies with different slugg': function(err, board) {
+                assert.equal(board.stacksGet('todo').stickies.length, 12)
+                var allslug = []
+                board.stacksGet('todo').stickies.forEach(function(sticky) {
+                    allslug.push(sticky.slug)
+                })
+                var i = 0;
+                while (i < allslug.length) {
+                    assert.ok(allslug.indexOf(allslug.pop()) < 0)
+                    i++
+                }
+            }
+        }
+    }
+}).addBatch({
     'Given cleaning db from test': {
         topic: function() {
             Make.clean().when(this.callback)

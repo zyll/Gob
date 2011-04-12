@@ -10,27 +10,46 @@ var cradle = require('cradle')
  * This slug is reserved while the object is not persisted, flush the cache should be done in the object itself.
  */
 function Slugify(obj, prop) {
-    obj.prototype._in_write_slugging = []
-    obj.prototype.slugging = function(cb) {
+
+    obj.prototype.bookSlug = function(ns, slug) {
+        if(!this.model.slugBooker[ns]) {
+            this.model.slugBooker[ns] = []
+        }
+        this.model.slugBooker[ns].push(slug)
+    }
+
+    obj.prototype.freeSlug = function(ns, slug) {
+        if(this.model.slugBooker[ns] && this.model.slugBooker[ns][slug]) {
+            delete this.model.slugBooker[ns][slug]
+            if(this.model.slugBooker[ns].length == 0) {
+                delete this.model.slugBooker[ns]
+            }
+        }
+    }
+
+    obj.prototype.isBookSlug = function(ns, slug) {
+        return this.model.slugBooker[ns] && this.model.slugBooker[ns].indexOf(slug) >= 0
+    }
+
+    obj.prototype.slugging = function(ns, cb) {
         var self = this
-        //var slug = escape(this[prop].substring(0, 10))
           , slug = escape(this[prop].substring(0, 10)).replace(/\%20/g, '-')
           , base_slug = slug
           , acc = 0
-          , parent_slug = this.parent ? this.parent.slug : self.model.db.name
           , find_it = function() {
-                if(self._in_write_slugging.indexOf(parent_slug + '/' + slug) >= 0) {
+                if(self.isBookSlug(ns, slug)) {
                     slug = base_slug + '-' + (++acc)
                     find_it()
                 } else {
-                    self._in_write_slugging.push(parent_slug + '/' + slug)
+                    self.bookSlug(ns, slug)
                     self.get(slug, function(err, res) {
                         if(res) {
-                            delete self._in_write_slugging.indexOf((parent_slug) + '/' + slug)
+                            self.freeSlug(ns, slug)
                             slug = base_slug + '-' + (++acc)
                             find_it()
                         } else {
-                            cb(slug)
+                            self.slug = slug
+                            cb(err)
                         }
                     })
                 }
@@ -50,6 +69,7 @@ var Model = function(conf) {
     this.Board = function(data) {return new Model.Board(self, data)}
     this.Stack = function(data) {return new Model.Stack(self, data)}
     this.Sticky = function(data) {return new Model.Sticky(self, data)}
+    this.slugBooker =  []
 }
 
 Model.designs = [
@@ -158,6 +178,14 @@ function Compose(obj, prop, kind) {
         obj.parent = this
         this[prop].push(obj)
     }
+    obj.prototype[prop + 'Get'] = function(slug) {
+        for(var i = 0; i < this[prop].length; i++) {
+            if(this[prop][i].slug == slug) {
+                return this[prop][i]
+            }
+            return null
+        }
+    }
 }
 
 /**
@@ -174,19 +202,6 @@ Model.Board = function(model, data) {
     this.id = data._id
     this.rev = data._rev
     this.stacksSet(data)
-    /*
-    if(data.stacks) {
-        this.stacks = data.stacks.map(function(item) {
-            if(item instanceof Model.Stack) {
-                return item // mhhhh, must check that on some tricky case.
-            } else {
-                item.board = self // avoid duplicate board instance
-                return new model.Stack(item)
-            }
-        })
-    } else {
-        this.stacks = []
-    }*/
 }
 Model.Board.prototype.asData = function(cb) {
     return {
@@ -208,25 +223,52 @@ Compose(Model.Board, 'stacks', 'Stack')
  */
 Model.Board.prototype.save = function(cb) {
     var self = this
-    var data = this.asData()
-    if(this.id) {
-        this.model.db.save(this.id, data, function(err, res) {
-            cb(err, self)
-        })
-    } else {
-        this.slugging(function slugginBack(slug) {
-            data.slug = slug
-            self.slug = slug
-            self.model.db.save(data, function(err, res) {
-                if(!err) {
-                    self.id = res.id
-                    self.rev = res._rev
-                }
-                delete self._in_write_slugging[self._in_write_slugging.indexOf(slug)]
-                cb(err, self)
-            })
-        })
+    // slug must be ok before writing.
+    var join = Futures.join()
+    var _toSlug = []
+    if(!this.slug) {
+        var f = Futures.future()
+        join.add(f)
+        _toSlug.push({obj: this, ns: 'board/'+this.model.db.name, future: f})
     }
+    this.stacks.forEach(function(stack) {
+        if(!stack.slug) {
+            var f = Futures.future()
+            join.add(f)
+            _toSlug.push({obj: stack, ns: 'stack/'+stack.model.db.name, future: f})
+        }
+        stack.stickies.forEach(function(sticky) {
+            if(!sticky.slug) {
+                var f = Futures.future()
+                join.add(f)
+                _toSlug.push({obj: sticky, ns: 'sticky/'+sticky.model.db.name, future: f})
+            }
+        })
+    })
+    join.when(function(dones) {
+        var data = self.asData()
+        var wrap = function(err, res) {
+            _toSlug.forEach(function(item) {
+                item.obj.freeSlug(item.ns, item.slug)
+            })
+            cb(err, self)
+        }
+        // todo : free all booked slug
+        if(self.id) {
+            self.model.db.save(self.id, data, wrap)
+            
+        } else {
+            self.model.db.save(data, function(err, res) {
+                self.id = res._id
+                self.rev = res._rev
+                wrap(null)
+            })
+        }           
+    })
+
+    _toSlug.forEach(function(item) {
+        item.obj.slugging(item.ns, item.future.deliver)
+    })
 }
 
 Model.Board.prototype.get = function(slug, cb) {
@@ -253,7 +295,7 @@ Model.Board.prototype.all = function(cb) {
             cb(err, res)
         } else {
             cb(err, res.map(function(board) {
-                return new self.model.Board(self.model.db, board)
+                return new self.model.Board(board)
             }))
         }
     })
@@ -272,6 +314,7 @@ Model.Stack = function(model, data) {
     this.id = data._id
     this.rev = data._rev
     this.parent = data.parent
+    this.parent = data.parent instanceof Model.Board ? data.parent : new this.model.Board(data.parent)
     this.stickiesSet(data)
 }
 Model.Stack.prototype.asData = function(cb) {
@@ -280,7 +323,7 @@ Model.Stack.prototype.asData = function(cb) {
         name: this.name,
         slug: this.slug,
         stickies: this.stickies.map(function(stickies) {
-            return stickes.asData()
+            return stickies.asData()
         })
     }
 }
@@ -324,7 +367,7 @@ Model.Sticky = function(model, data) {
     this.user = data.user || 'user'
     this.id = data._id || null
     this.rev = data._rev || null
-    this.parent = data.parent || null
+    this.parent = data.parent
 }
 
 Model.Sticky.prototype.asData = function(cb) {
@@ -379,19 +422,13 @@ Stack.prototype.add = function(sticky) {
 Stack.prototype.save = function(cb) {
     var self = this
     var data = this.asData()
-    if(this.id) {
-        this.db.save(this.id, data, function(err, res) {
-            cb(err, self)
-        })
+    if(this.slug) {
+        this.parent.save(cb)
     } else {
         this.slugging(function(slug) {
             data.slug = slug
             self.slug = slug
-            self.db.save(data, function(err, res) {
-                if(!err) {
-                    self.id = res._id
-                    self.rev = res._res
-                }
+            this.parent.save(data, function(err, res) {
                 delete self._in_write_slugging[self._in_write_slugging.indexOf(data.board.slug + '/' + slug)]
                 cb(err, self)
             })
