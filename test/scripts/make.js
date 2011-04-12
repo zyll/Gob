@@ -42,8 +42,10 @@ module.exports = {
         var done = new Futures.join()
         var board1 = Futures.future()
         var board2 = Futures.future()
+        var board3 = Futures.future()
         done.add(board1)
         done.add(board2)
+        done.add(board3)
 
         var db = '/board_test_board'
         r('PUT', db).addListener('success', function() {
@@ -62,8 +64,27 @@ module.exports = {
                         stickies: []},
                 ]})
                 .addListener('success', board1.deliver) 
+            
             r('PUT', db + "/board2", {type: 'board', name: 'board2', slug: 'board2', stacks: []})
                 .addListener('success', board2.deliver)
+
+            r('PUT', db + "/board3", {type: 'board', name: 'moving', slug: 'moving',
+                stacks: [
+                    {type: 'stack', name: 'todo', slug: 'todo',
+                        stickies: [
+                            {type: 'sticky', title: 'remove', slug: 'remove',
+                                content: 'remove a sticky from a stack using its instance'},
+                            {type: 'sticky', title: 'move', slug: 'move',
+                                content: 'move a sticky from a stack to another one'},
+                            {type: 'sticky', title: 'add by pos', slug: 'add-by-pos',
+                                content: 'add a sticky to a stack at a given position'}
+                        ]},
+                    {type: 'stack', name: 'in progress', slug: 'progress',
+                        stickies: []},
+                    {type: 'stack', name: 'done', slug: 'done',
+                        stickies: []},
+                ]})
+                .addListener('success', board3.deliver) 
         });
         return done
     }

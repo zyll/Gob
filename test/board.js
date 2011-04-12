@@ -62,7 +62,7 @@ vows.describe('Model.Board').addBatch({
             },
             'it should return a list': function(err, boards) {
                 assert.isArray(boards)
-                assert.equal(boards.length, 2)
+                assert.equal(boards.length, 3)
             },
             'it should not have any deep board info': function(err, boards) {
                 assert.equal(boards[0].stacks.length, 0)
@@ -362,6 +362,68 @@ vows.describe('Model.Board').addBatch({
                     assert.ok(allslug.indexOf(allslug.pop()) < 0)
                     i++
                 }
+            }
+        }
+    }
+}).addBatch({
+    'Given the board "moving" for "board_test_board"': {
+        topic: function() {
+            var model  = new Model({name: 'board_test_board'})
+            new model.Board()
+                .get('moving', this.callback)
+        },
+        'when removing sticky named "remove" from the "todo" stack': {
+            topic: function(err, board) {
+                var stack = board.stacksGet('todo')
+                var sticky = stack.stickiesGet('remove')
+                stack.stickiesRemove(sticky)
+                return board
+            },
+            'it should return a board without the sticky "remove"': function(board) {
+                assert.equal(board.stacksGet('todo').stickies.length, 2)
+            }
+        }
+    }
+}).addBatch({
+    'Given the board "moving" for "board_test_board"': {
+        topic: function() {
+            var model  = new Model({name: 'board_test_board'})
+            new model.Board()
+                .get('moving', this.callback)
+        },
+        'when moving sticky named "move" from the "todo" stack to the "in progress" one': {
+            topic: function(err, board) {
+                var from = board.stacksGet('todo')
+                var to = board.stacksGet('progress')
+                var sticky = from.stickiesGet('move')
+                from.stickiesMove(sticky, to)
+                return board
+            },
+            'it should return a board without the sticky "move" in the todo stack': function(board) {
+                assert.equal(board.stacksGet('todo').stickies.length, 2)
+            },
+            'it should return a board with the sticky "move" at last pos in the in-progress stack': function(board) {
+                assert.equal(board.stacksGet('progress').stickies.length, 1)
+                assert.equal(board.stacksGet('progress').stickies[0].slug, "move")
+            }
+        }
+    }
+}).addBatch({
+    'Given the board "moving" for "board_test_board"': {
+        topic: function() {
+            var model  = new Model({name: 'board_test_board'})
+            new model.Board()
+                .get('moving', this.callback)
+        },
+        'when moving sticky named "move" from the "todo" at first pos': {
+            topic: function(err, board) {
+                var stack = board.stacksGet('todo')
+                var sticky = stack.stickiesGet('move')
+                stack.stickiesMove(sticky, stack, 0)
+                return board
+            },
+            'it should return a board with the sticky "move" at first pos in the todo stack': function(board) {
+                assert.equal(board.stacksGet('todo').stickies[0].slug, "move")
             }
         }
     }

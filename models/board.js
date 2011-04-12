@@ -152,6 +152,7 @@ Model.prototype.createDB = function(cb) {
  * if not object data will be encapse as the mentioned object (kind).
  */
 function Compose(obj, prop, kind) {
+    
     obj.prototype[prop+'Set'] = function(data) {
         var self = this
         if(data[prop]) {
@@ -167,18 +168,38 @@ function Compose(obj, prop, kind) {
             self[prop] = []
         }
     }
-    obj.prototype[prop + 'Add'] = function(obj) {
+
+    obj.prototype[prop + 'Add'] = function(obj, at) {
         obj.parent = this
-        this[prop].push(obj)
+        if(typeof(at) == 'number') {
+            this[prop].splice(at, 0, obj)
+        } else {
+            this[prop].push(obj)
+        }
     }
+
     obj.prototype[prop + 'Get'] = function(slug) {
         for(var i = 0; i < this[prop].length; i++) {
             if(this[prop][i].slug == slug) {
                 return this[prop][i]
             }
-            return null
+        }
+        return null
+    }
+
+    obj.prototype[prop + 'Move'] = function(obj, to, at) {
+        this[prop + 'Remove'](obj)
+        to[prop + 'Add'](obj, at)
+    }
+
+    obj.prototype[prop + 'Remove'] = function(obj) {
+        var pos = this[prop].indexOf(obj)
+        if(pos >= 0) {
+            obj.parent = null
+            this[prop].splice(pos, 1)
         }
     }
+
 }
 
 /**
@@ -418,6 +439,10 @@ Model.Sticky.prototype.url = function() {
             'sticky', this.slug].join('/')
 }
 
+Model.Sticky.prototype.move = function(to) {
+    this.parent.stickiesRemove(this)
+    to.stack.stickiesAdd(this, to.pos)
+}
 
 var Stack = function() {}
 Stack.prototype.add = function(sticky) {
