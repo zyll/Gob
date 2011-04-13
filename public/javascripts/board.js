@@ -15,11 +15,16 @@ Board.prototype.connectStack = function() {
     $.each(this.stacks, function(index, stack) {
         res.push(stack.holder[0]);
     });
+    this.inMove = null;
     console.log(res);
     $(res).sortable({
         connectWith: res,
-        receive: function() {
-            self.element.trigger('ticket:move');
+        remove: function(evetn, ui) {
+            self.inMove = {stack: $(this).data('slug'), sticky: $(event.srcElement).data('slug')};
+        },
+        receive: function(event, ui) {
+            self.element.trigger('ticket:move', [self.inMove.sticky, self.inMove.stack, $(this).data('slug')]);
+
         }
     });
 }
@@ -66,7 +71,6 @@ function Stack(element, board) {
     this.name = this.element.attr('id');
     
     // owned tickets collection.
-    this.tickets = [];
     this.element.find('article').each(function(index, element) {
         self.add(element);
     });
@@ -74,7 +78,6 @@ function Stack(element, board) {
 
 Stack.prototype.add = function(el) {
     var ticket = new Ticket(el, $(this));
-    this.tickets.push(ticket);
 }
 
 Stack.prototype.append = function(el) {
@@ -94,8 +97,7 @@ function Ticket(element, stack) {
         submit: 'OK',
         cancel: 'Cancel',
         callback: function(value, settings) {
-            console.log('I');
-            $(self.element).trigger("ticket:change");
+            $(self.element).trigger("ticket:update", [self]);
         }
     });
 }
@@ -119,9 +121,26 @@ $(document).ready( function() {
         socket.send({board: board.name})
 
         // auto save on ticket change, ticket move or board deployed.
-        board.element.bind('ticket:change ticket:move ticket:new ticket:trash', function() {
+        board.element.bind('ticket:change ticket:new ticket:trash', function() {
             board.save('/board/' + board.name);
             
+        });
+        
+        board.element.bind('ticket:move', function(event, sticky, from, to) {
+            console.log("sticky: %s, from: %s, to: %s", sticky, from, to)
+            $.ajax({
+                url: ["/board", board.name,
+                    "stack", from,
+                    "sticky", sticky,
+                    "move"].join('/'),
+                dataType: 'html',
+                data: {to: to},
+                type: 'post',
+                success: function() {
+                    self.element.trigger('board:saved');
+                }
+            });
+       
         });
 
         var trash = new Stack($("section.trash"), board);

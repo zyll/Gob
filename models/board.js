@@ -259,7 +259,7 @@ Model.Board.prototype.save = function(cb) {
             }
         })
     })
-    join.when(function(dones) {
+    var saveAndFree = function() {
         var data = self.asData()
         var wrap = function(err, res) {
             _toSlug.forEach(function(item) {
@@ -278,11 +278,16 @@ Model.Board.prototype.save = function(cb) {
                 wrap(null)
             })
         }           
-    })
-
-    _toSlug.forEach(function(item) {
-        item.obj.slugging(item.ns, item.future.deliver)
-    })
+    }
+    
+    if(_toSlug.length > 0) {
+        join.when(saveAndFree)
+        _toSlug.forEach(function(item) {
+            item.obj.slugging(item.ns, item.future.deliver)
+        })
+    } else {
+        saveAndFree()
+    }
 }
 
 Model.Board.prototype.get = function(slug, cb) {

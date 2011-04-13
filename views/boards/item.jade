@@ -12,9 +12,9 @@ html(lang: "en")
   body
     header
       p ScrumBoard : #{board.name}
-      a(href: '/board/' + board.slug + '/stack') add stack
+      a(href: board.url() + '/stack') add stack
     section
-      ul
+      ul.board('data-slug': board.slug)
         -each stack in board.stacks
           li!= partial('../stacks/item', {stack: stack})
     section

@@ -171,6 +171,42 @@ var server = express.createServer(
         })
 
         /**
+         * move a sticky to a stack
+         */
+        app.post('/board/:board/stack/:stack/sticky/:sticky/move', function(req, res, next) {
+            // load board
+            new model.Board()
+                .get(req.params.board, function(err, board) {
+                    if(!err && board) {
+                        var to = board.stacksGet(req.body.to || req.params.stack)
+                        var from = board.stacksGet(req.params.stack)
+                        var at = req.body.at
+                        var sticky = null
+                        if(from) {
+                            sticky = from.stickiesGet(req.params.sticky)
+                        }
+                        if(sticky && to) {
+                            console.log("sticky: %s, from: %s, to: %s, at: %s", sticky.slug, from.slug, to.slug, at)
+                            from.stickiesMove(sticky, to, at)
+                            board.save(function(err) {
+                                console.log('me')
+                                console.log(arguments)
+                                if(!err) {
+                                    res.redirect(board.url())
+                                } else {
+                                    res.send(404)
+                                }
+                            })
+                        } else {
+                            res.send(404)
+                        }
+                    } else {
+                        res.send(404)   
+                    }
+                })
+        })
+        
+        /**
          * Getting a sticky by it's slug
          * @return 404 Not Found if it doesn't exist
          */
@@ -226,16 +262,16 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
                     client.send({change: true})
                 }
             }
-            boards.on('board:save', listen_func)
+           // boards.on('board:save', listen_func)
         }
     });
 
     client.on('disconnect', function(){
-        var listen_board = null
+        /*var listen_board = null
         if(listen_func) {
             boards.removeListener('board:save', listen_func)
         }
-        listen_func = null
+        listen_func = null*/
         console.log('disconnect')
     });
 }));
