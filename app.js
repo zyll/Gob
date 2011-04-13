@@ -70,6 +70,7 @@ var server = express.createServer(
             new model.Board()
                 .get(escape(req.params.board), function(err, board) {
                 if(!err && board) {
+                    console.log(board.stacks)
                     return res.render('boards/item', {locals: {board: board}, layout: false})
                 } else {
                     res.send(404)
@@ -133,7 +134,7 @@ var server = express.createServer(
             new model.Stack({parent: {slug: escape(req.params.board)}})
                 .get(escape(req.params.stack), function(err, stack) {
                     if(!err && stack) {
-                        res.render('stickies/form', {locals: {stack: stack}})
+                        res.render('stickies/form', {locals: {stack: stack}, layout: req.isXMLHttpRequest})
                     } else {
                         res.send(404)
                     }
@@ -186,11 +187,8 @@ var server = express.createServer(
                             sticky = from.stickiesGet(req.params.sticky)
                         }
                         if(sticky && to) {
-                            console.log("sticky: %s, from: %s, to: %s, at: %s", sticky.slug, from.slug, to.slug, at)
                             from.stickiesMove(sticky, to, at)
                             board.save(function(err) {
-                                console.log('me')
-                                console.log(arguments)
                                 if(!err) {
                                     res.redirect(board.url())
                                 } else {
@@ -220,7 +218,7 @@ var server = express.createServer(
                 }
             }).get(escape(req.params.sticky), function(err, sticky) {
                 if(!err && sticky) {
-                    res.render('stickies/item', {locals: {sticky: sticky}})
+                    res.render('stickies/item', {locals: {sticky: sticky}, layout: false})
                 } else {
                     res.send(404)
                 }

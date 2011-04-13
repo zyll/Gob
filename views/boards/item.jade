@@ -4,6 +4,7 @@ html(lang: "en")
     meta(charset: "utf-8")
     title Board
     link(href: "/stylesheets/base.css", rel: "stylesheet")
+    link(href: "/stylesheets/jquery-ui.css", rel: "stylesheet")
     script(type: "text/javascript", src: "https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js")
     script(type: "text/javascript", src: "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.min.js")
     script(type: "text/javascript", src: "http://www.appelsiini.net/download/jquery.jeditable.js") 
@@ -16,15 +17,11 @@ html(lang: "en")
     section
       ul.board('data-slug': board.slug)
         -each stack in board.stacks
-          li!= partial('../stacks/item', {stack: stack})
-    section
-      article#tplSticky
-        header: h2.editable Ticket title
-        section: p.editable Content ticket
-        footer: p.editable
-      section.trash.stack
-        ul
-          li
+          != partial('../stacks/item', {stack: stack})
+    section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0]})
+    section.trash.stack
+      ul
+        li Trash
     aside
       ul
         - if (board.stacks.length)

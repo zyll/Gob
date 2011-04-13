@@ -83,7 +83,6 @@ Stack.prototype.add = function(el) {
 Stack.prototype.append = function(el) {
     this.holder.append('<li>');
     this.add($(el).appendTo(this.holder.find('li:last')[0]).attr('id', null));
-    this.element.trigger('ticket:new');
 }
 
 function Ticket(element, stack) {
@@ -121,7 +120,7 @@ $(document).ready( function() {
         socket.send({board: board.name})
 
         // auto save on ticket change, ticket move or board deployed.
-        board.element.bind('ticket:change ticket:new ticket:trash', function() {
+        board.element.bind('ticket:change ticket:trash', function() {
             board.save('/board/' + board.name);
             
         });
@@ -133,7 +132,6 @@ $(document).ready( function() {
                     "stack", from,
                     "sticky", sticky,
                     "move"].join('/'),
-                dataType: 'html',
                 data: {to: to},
                 type: 'post',
                 success: function() {
@@ -143,6 +141,20 @@ $(document).ready( function() {
        
         });
 
+        board.element.bind('ticket:new', function(event, sticky, stack) {
+            console.log("sticky: %s, stack: %s", sticky, stack)
+            $.ajax({
+                url: ["/board", board.name,
+                    "stack", from,
+                    "sticky"].join('/'),
+                data: sticky,
+                type: 'post',
+                success: function() {
+                    self.element.trigger('board:saved');
+                }
+            });
+       
+        });
         var trash = new Stack($("section.trash"), board);
         board.addStack(trash);
 
@@ -150,7 +162,21 @@ $(document).ready( function() {
         // use template to add new ticket to the first stack
         $('#addSticky').bind('click', function(event) {
             event.preventDefault();
-            board.stacks[0].append($('#tplSticky').clone());
+            $('#tplSticky').dialog({
+                buttons: {
+                    'Create': function() {
+                        var self = this
+                        var form = $(this).find('form');
+                        $.ajax(form.attr('action'), {type: form.attr('method'), data: form.serialize()})
+                            .success(function(data, statusCode, xhr) {
+                                $(self).dialog('close');
+                                board.stacks[0].append(data)
+                            })
+                    }
+                }
+            });
+
+
         });
 
         // action to deploy the board.
