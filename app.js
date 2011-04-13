@@ -26,7 +26,7 @@ var server = express.createServer(
     express.bodyParser(),
     express.router(function(app) {
 
-        /**
+       /**
         * Home
         */
         app.get('/', function(req, res, next) {
@@ -175,22 +175,28 @@ var server = express.createServer(
          * move a sticky to a stack
          */
         app.post('/board/:board/stack/:stack/sticky/:sticky/move', function(req, res, next) {
-            // load board
+            if(!req.body) {
+                var to_slug = req.params.stack
+                var at_pos = undefined
+            } else {
+                var to_slug = req.body.to || req.params.stack
+                var at_pos = req.body.at
+            }
             new model.Board()
                 .get(req.params.board, function(err, board) {
                     if(!err && board) {
-                        var to = board.stacksGet(req.body.to || req.params.stack)
+                        var to = board.stacksGet(to_slug)
                         var from = board.stacksGet(req.params.stack)
-                        var at = req.body.at
                         var sticky = null
                         if(from) {
                             sticky = from.stickiesGet(req.params.sticky)
                         }
                         if(sticky && to) {
-                            from.stickiesMove(sticky, to, at)
+                            from.stickiesMove(sticky, to, at_pos)
                             board.save(function(err) {
                                 if(!err) {
                                     res.redirect(board.url())
+                                    model.emit('stack:change', {board: board.slug, stacks: [from.slug, to.slug]})
                                 } else {
                                     res.send(404)
                                 }
