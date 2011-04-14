@@ -18,7 +18,8 @@ html(lang: "en")
       ul.board('data-slug': board.slug)
         -each stack in board.stacks
           != partial('../stacks/item', {stack: stack})
-    section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0]})
+    - if (board.stacks.length)
+      section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0]})
     section.trash.stack
       ul
         li Trash

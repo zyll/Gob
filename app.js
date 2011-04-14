@@ -70,7 +70,6 @@ var server = express.createServer(
             new model.Board()
                 .get(escape(req.params.board), function(err, board) {
                 if(!err && board) {
-                    console.log(board.stacks)
                     return res.render('boards/item', {locals: {board: board}, layout: false})
                 } else {
                     res.send(404)
