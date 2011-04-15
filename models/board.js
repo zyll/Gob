@@ -336,7 +336,6 @@ Model.Stack = function(model, data) {
     this.slug = data.slug
     this.id = data._id
     this.rev = data._rev
-    this.parent = data.parent
     this.parent = data.parent instanceof Model.Board ? data.parent : new this.model.Board(data.parent)
     this.stickiesSet(data)
 }
@@ -347,7 +346,8 @@ Model.Stack.prototype.asData = function(cb) {
         slug: this.slug,
         stickies: this.stickies.map(function(stickies) {
             return stickies.asData()
-        })
+        }),
+        parent: {slug: this.parent.slug}
     }
 }
 
@@ -403,8 +403,9 @@ Model.Sticky.prototype.asData = function(cb) {
         type: 'sticky',
         slug: this.slug,
         title: this.title,
-        content: this.slug,
-        user: this.user
+        content: this.content,
+        user: this.user,
+        parent: {slug: this.parent.slug, parent: {slug: this.parent.parent.slug}}
     }
 }
 
