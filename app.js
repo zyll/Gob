@@ -164,9 +164,42 @@ var server = express.createServer(
                         if(err) {
                             return res.send(500)
                         }
-                        res.redirect(sticky.url());
+                        res.redirect(sticky.url())
                     })
                 } else return res.send(404)
+            })
+        })
+
+        /**
+         * update a sticky.
+         * @return 302 Redirect, on done, content-location headers point to the new sticky.
+         * @return 404 Not found, sticky doesn't exist.
+         * @return 500 On fail to save.
+         */
+        app.post('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
+            new model.Board()
+                .get(escape(req.params.board), function(err, board) {
+                if(!err && board) {
+                    var stack = board.stacksGet(escape(req.params.stack))
+                    if(!stack) {
+                        return res.send(404)
+                    }
+                    var sticky = stack.stickiesGet(escape(req.params.sticky))
+                    if(!sticky) {
+                        return res.send(404)
+                    }
+                    sticky.title = req.body.title
+                    sticky.content = req.body.content
+                    sticky.user = req.body.user
+                    board.save(function(err, board) {
+                        if(err) {
+                            return res.send(500)
+                        }
+                        res.redirect(sticky.url())
+                    })
+                } else {
+                    return res.send(404)
+                }
             })
         })
 
@@ -195,7 +228,7 @@ var server = express.createServer(
                             board.save(function(err) {
                                 if(!err) {
                                     res.redirect(board.url())
-                                    model.emit('stack:change', {board: board.slug, stacks: [from.slug, to.slug]})
+                                    //model.emit('stack:change', {board: board.slug, stacks: [from.slug, to.slug]})
                                 } else {
                                     res.send(404)
                                 }

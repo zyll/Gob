@@ -1,7 +1,8 @@
-article('data-slug': sticky.slug)
+article.sticky('data-slug': sticky.slug)
   header
-    h2.title.editable #{sticky.title}
+    h2.title #{sticky.title}
+    a.editable(href: sticky.url()) edit
   section
-    p.content.editable #{sticky.content}
+    p.content #{sticky.content}
   footer
-    p.user.editable #{sticky.user}
+    p.user #{sticky.user}

@@ -16,11 +16,10 @@ Board.prototype.connectStack = function() {
         res.push(stack.holder[0]);
     });
     this.inMove = null;
-    console.log(res);
     $(res).sortable({
         connectWith: res,
-        remove: function(evetn, ui) {
-            self.inMove = {stack: $(this).data('slug'), sticky: $(event.srcElement).data('slug')};
+        remove: function(event, ui) {
+            self.inMove = {stack: $(this).data('slug'), sticky: $(ui.item).find('article.sticky').data('slug')};
         },
         receive: function(event, ui) {
             self.element.trigger('ticket:move', [self.inMove.sticky, self.inMove.stack, $(this).data('slug')]);
@@ -86,19 +85,38 @@ Stack.prototype.append = function(el) {
 }
 
 function Ticket(element, stack) {
+    this.stack = stack;
+    this.setContent(element)
+}
+
+Ticket.prototype.setContent = function(element) {
     var self = this;
     this.element = element;
-    this.stack = stack;
-    $(this.element).find('.editable').editable(function(value, settings) {
-        return(value);
-    }, { 
-        type  : 'textarea',
-        submit: 'OK',
-        cancel: 'Cancel',
-        callback: function(value, settings) {
-            $(self.element).trigger("ticket:update", [self]);
-        }
-    });
+    $(this.element).find('.editable').live('click', function(event) {
+        var link = this
+        event.preventDefault();
+        $('#tplSticky').dialog({
+            buttons: {
+                'Create': function() {
+                    var that = this
+                    $.post($(link).attr('href'), $(this).find('form').serialize())
+                        .success(function(data, statusCode, xhr) {
+                            $(that).dialog('close');
+                            $(self.element).trigger('ticket:change', [self, xhr.responseText]);
+                        })
+                },
+            },
+            open: function() {
+                var form = $(self.element).find('form')
+                var that = this;
+                $.each(['title', 'content', 'user'], function(i, item) {
+                    $(that).find('input[name="' + item + '"]').val($(self.element).find('.' + item).text());
+                })
+            }
+        });
+    })
+}
+Ticket.prototype.replaceBy = function(element) {
 }
 
 $(document).ready( function() {
@@ -119,14 +137,7 @@ $(document).ready( function() {
         
         socket.send({board: board.name})
 
-        // auto save on ticket change, ticket move or board deployed.
-        board.element.bind('ticket:change ticket:trash', function() {
-            board.save('/board/' + board.name);
-            
-        });
-        
         board.element.bind('ticket:move', function(event, sticky, from, to) {
-            console.log("sticky: %s, from: %s, to: %s", sticky, from, to)
             $.ajax({
                 url: ["/board", board.name,
                     "stack", from,
@@ -138,11 +149,13 @@ $(document).ready( function() {
                     self.element.trigger('board:saved');
                 }
             });
-       
+        });
+
+        board.element.bind('ticket:change', function(event, old, last) {
+            $(old.element).html($(last).children());
         });
 
         board.element.bind('ticket:new', function(event, sticky, stack) {
-            console.log("sticky: %s, stack: %s", sticky, stack)
             $.ajax({
                 url: ["/board", board.name,
                     "stack", from,
