@@ -8,17 +8,12 @@ var http    = require('http')
   , io = require('socket.io')
   
   , Model = require('./models/board')
+  , EventEmitter = require('events').EventEmitter
 
     require("socket.io-connect"); // ???
 
 var model = new Model({name: 'dev_boards'})
-
-  /*
-* @todo rely on an object to catch save event
-boards.on('board:save', function(data) {
-    console.log('me')
-})
-*/
+  , event = new EventEmitter()
 
 var server = express.createServer(
     express.static(__dirname + '/public'),
@@ -58,6 +53,7 @@ var server = express.createServer(
         app.post('/board', function(req, res, next) {
             new model.Board({name: req.param('name')})
                 .save(function(err, board) {
+                    event.emit('board:new', board)
                     res.redirect(board.url())
                 })
         })
@@ -105,6 +101,7 @@ var server = express.createServer(
                 } else {
                     board.stacksAdd(new model.Stack({name: req.body.name}))
                     board.save(function(err, stack) {
+                            event.emit('stack:new', stack)
                             res.redirect(stack.url())
                         })
                 }
@@ -164,6 +161,7 @@ var server = express.createServer(
                         if(err) {
                             return res.send(500)
                         }
+                        event.emit('sticky:new', sticky)
                         res.redirect(sticky.url())
                     })
                 } else return res.send(404)
@@ -195,6 +193,7 @@ var server = express.createServer(
                         if(err) {
                             return res.send(500)
                         }
+                        event.emit('sticky:update', sticky)
                         res.redirect(sticky.url())
                     })
                 } else {
@@ -227,6 +226,7 @@ var server = express.createServer(
                             from.stickiesMove(sticky, to, at_pos)
                             board.save(function(err) {
                                 if(!err) {
+                                    event.emit('sticky:move', sticky, from)
                                     res.redirect(board.url())
                                     //model.emit('stack:change', {board: board.slug, stacks: [from.slug, to.slug]})
                                 } else {
@@ -284,21 +284,28 @@ model.createDB(function(err, res) {
 var socket = io.listen(server);
 socket.on('connection', socket.prefixWithMiddleware( function (client, req, res) {
 
-    var listen_board = null
-    listen_func = null
+    var listen_board = null,
+        listen_func = null
 
     client.on('message', function(message){
         if(message.board && listen_board != message.board) {
             listen_board = message.board
             if(listen_func) {
-                boards.removeListener('board:save', listen_func)
+                event.removeListener('sticky', listen_func)
             }
-            listen_func = function(board) {
-                if(board.name == listen_board) {
-                    client.send({change: true})
+            listen_func = function(sticky) {
+                console.log('event on '+ listen_board + ' sticky new')
+                console.log(sticky.parent.parent.slug, listen_board)
+                if(sticky.parent.parent.slug == listen_board) {
+                    jade.renderFile(__dirname + '/views/stickies/item.jade', {locals: {sticky: sticky}}, function(err, res) {
+                        console.log(res)
+                        client.send({event: 'sticky:new', data: {sticky: sticky.asData(), html: res}})
+                        console.log('event sent')
+                    })
                 }
             }
-           // boards.on('board:save', listen_func)
+            event.on('sticky:new', listen_func)
+            console.log('listen '+ listen_board +' on sticky:new')
         }
     });
 

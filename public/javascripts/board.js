@@ -2,6 +2,7 @@
 function Board(element) {
     var self = this;
     this.element = element;
+    this.slug = $(element).data('slug');
     this.stacks = [];
     this.element.find('.stack').each(function() {
         var stack = new Stack($(this), self);
@@ -32,19 +33,12 @@ Board.prototype.addStack = function(stack) {
     this.stacks.push(stack);
 }
 
-Board.prototype.save = function(url) {
-    var self = this;
-    $.ajax({
-        url: url,
-        dataType: 'html',
-        data: this.element.parent().html(),
-        type: 'post',
-        processData: false,
-        contentType: 'text/html',
-        success: function() {
-            self.element.trigger('board:saved');
-        }
-    });
+Board.prototype.getStack = function(slug) {
+    console.log(slug)
+    console.log(this.stacks)
+    for(var i = 0; i < this.stacks.length; i++)
+        if(this.stacks[i].slug == slug) return this.stacks[i];
+    return null;
 }
 
 Board.prototype.deploy = function(url) {
@@ -67,6 +61,7 @@ function Stack(element, board) {
     // our stack element.
     this.element = element;
     this.holder = this.element.find('ul');
+    this.slug = this.holder.data('slug');
     this.name = this.element.attr('id');
     
     // owned tickets collection.
@@ -82,6 +77,7 @@ Stack.prototype.add = function(el) {
 Stack.prototype.append = function(el) {
     this.holder.append('<li>');
     this.add($(el).appendTo(this.holder.find('li:last')[0]).attr('id', null));
+    console.log('added')
 }
 
 function Ticket(element, stack) {
@@ -121,12 +117,6 @@ Ticket.prototype.replaceBy = function(element) {
 
 $(document).ready( function() {
     
-    var socket = new io.Socket();
-    socket.connect();
-    socket.on('connect', function() {
-    })
-    socket.on('message', function(data) {console.log(data)})
-    socket.on('disconnect', function(){console.log('disconnet')})
 
     $('.board').each(function() {
 
@@ -135,7 +125,6 @@ $(document).ready( function() {
 
         board.name = location.href.split('/').pop()
         
-        socket.send({board: board.name})
 
         board.element.bind('ticket:move', function(event, sticky, from, to) {
             $.ajax({
@@ -191,6 +180,24 @@ $(document).ready( function() {
 
 
         });
+ 
+        var socket = new io.Socket();
+        socket.connect();
+        socket.on('connect', function() {
+            console.log('board ' + board.name + ' connected')
+            socket.send({board: board.slug})
+        })
+        socket.on('message', function(data) {
+            switch(data.event) {
+                case 'sticky:new':
+                    var stack = board.getStack(data.data.sticky.parent.slug)
+                    stack.append(data.data.sticky.html)
+                    console.log(stack)
+                    break;
+            }
+        })
+
+        socket.on('disconnect', function(){console.log('disconnet')})
 
         // action to deploy the board.
         $('#deployBoard').bind('click', function(event) {

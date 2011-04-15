@@ -3,6 +3,7 @@
  */
 var cradle = require('cradle')
   , Futures = require('futures')
+  , sys = require('sys')
 
 /**
  * Give slug powa to an object. this one have now a sluggyfy
