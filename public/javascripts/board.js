@@ -110,7 +110,7 @@ Ticket.prototype.setContent = function(element) {
                 var form = $(self.element).find('form')
                 var that = this;
                 $.each(['title', 'content', 'user'], function(i, item) {
-                    $(that).find('input[name="' + item + '"]').val($(self.element).find('.' + item).text());
+                    $(that).find('*[name="' + item + '"]').val($(self.element).find('.' + item).text());
                 })
             }
         });
