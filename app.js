@@ -226,7 +226,7 @@ var server = express.createServer(
                             from.stickiesMove(sticky, to, at_pos)
                             board.save(function(err) {
                                 if(!err) {
-                                    event.emit('sticky:move', sticky, from)
+                                    event.emit('sticky:move', sticky, from, board.rev)
                                     res.redirect(board.url())
                                 } else {
                                     res.send(404)
@@ -301,24 +301,34 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         }
     }
 
+    var stickyMove = function(sticky, from, rev) {
+        if(sticky.parent.parent.slug == listen_board) {
+            client.send({event: 'sticky:move', sticky: sticky.asData(), from: from.asData(), rev: rev})
+        }
+    }
+
     client.on('message', function(message){
         // client can change the listenned board.
         if(message.board && listen_board != message.board) {
             listen_board = message.board
             if(listen_board) {
-                event.removeListener('stickyNew', stickyNew)
+                event.removeListener('sticky:new', stickyNew)
+                event.removeListener('sticky:update', stickyUpdate)
+                event.removeListener('sticky:move ', stickyMove)
             }
             listen_board = message.board
             
             event.on('sticky:new', stickyNew)
             event.on('sticky:update', stickyUpdate)
+            event.on('sticky:move', stickyMove)
         }
     });
 
     client.on('disconnect', function(){
         var listen_board = null
-        event.removeListener('stickyNew', stickyNew)
-        event.removeListener('stickyUpdate', stickyUpdate)
+        event.removeListener('stickyi:new', stickyNew)
+        event.removeListener('sticky:update', stickyUpdate)
+        event.removeListener('sticky:move ', stickyMove)
         // todo other thing to destroy ?
         console.log('disconnect')
     });

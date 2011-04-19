@@ -21,11 +21,24 @@ Board.prototype.connectStack = function() {
     $(res).sortable({
         connectWith: res,
         remove: function(event, ui) {
-            self.inMove = {stack: $(this).data('slug'), sticky: $(ui.item).find('article.sticky').data('slug')};
+            var stack = self.getStack($(this).data('slug'));
+            var sticky = stack.getSticky($(ui.item).find('article.sticky').data('slug'));
+            self.inMove = { from: stack, sticky: sticky};
         },
         receive: function(event, ui) {
-            self.element.trigger('ticket:move', [self.inMove.sticky, self.inMove.stack, $(this).data('slug')]);
-
+            var sticky = self.inMove.sticky;
+            var to = self.getStack($(this).data('slug'));
+            $.ajax({
+                url: ["/board", self.name,
+                    "stack", self.inMove.from.slug,
+                    "sticky", sticky.slug,
+                    "move"].join('/'),
+                data: {to: to.slug},
+                type: 'post'
+            })
+            sticky.stack.removeSticky(sticky);
+            sticky.stack = to;
+            to.stickies.push(sticky);
         }
     });
 }
@@ -75,6 +88,13 @@ Stack.prototype.add = function(el) {
     this.stickies.push(ticket);
 }
 
+Stack.prototype.removeSticky = function(sticky) {
+    var pos = $.inArray(sticky, this.stickies);
+    if(pos >= 0) {
+        this.stickies.splice(pos, 1);
+    }
+}
+
 Stack.prototype.getSticky = function(slug) {
     for(var i = 0; i < this.stickies.length; i++)
         if(this.stickies[i].slug == slug) return this.stickies[i];
@@ -98,6 +118,12 @@ function Ticket(element, stack) {
 Ticket.prototype.update = function(element) {
     $(this.element).html($(element).children());
     this.setContent(element);
+}
+
+Ticket.prototype.remove = function() {
+    this.stack.removeSticky(this);
+    this.stack = null;
+    return $(this.element).parent('li').remove().children();
 }
 
 Ticket.prototype.setContent = function(element) {
@@ -133,29 +159,13 @@ $(document).ready( function() {
         var board = new Board($(this));
         board.name = location.href.split('/').pop()
 
-        board.element.bind('ticket:move', function(event, sticky, from, to) {
-            $.ajax({
-                url: ["/board", board.name,
-                    "sticky", sticky,
-                    "move"].join('/'),
-                data: {to: to},
-                type: 'post',
-                success: function() {
-                    self.element.trigger('board:saved');
-                }
-            });
-        });
-
         board.element.bind('ticket:new', function(event, sticky, stack) {
             $.ajax({
                 url: ["/board", board.name,
                     "stack", from,
                     "sticky"].join('/'),
                 data: sticky,
-                type: 'post',
-                success: function() {
-                    self.element.trigger('board:saved');
-                }
+                type: 'post'
             });
        
         });
@@ -192,10 +202,18 @@ $(document).ready( function() {
                         var stack = board.getStack(msg.sticky.parent.slug);
                         stack.append(msg.html);
                         break;
-                    case 'sticky:update':
+                    case 'sticky:new':
                         var stack = board.getStack(msg.sticky.parent.slug);
-                        var sticky = stack.getSticky(msg.sticky.slug);
-                        sticky.update($(msg.html));
+                        stack.append(msg.html);
+                        break;
+                    case 'sticky:move':
+                        var from = board.getStack(msg.from.slug);
+                        var to = board.getStack(msg.sticky.parent.slug);
+                        var sticky = from.getSticky(msg.sticky.slug);
+                        if(sticky) { // if we are the origin of the move.
+                            sticky.stack.removeSticky(sticky);
+                            to.append(sticky.remove())
+                        }
                         break;
                 }
                 board.rev = msg.rev; // updating board current rev.
