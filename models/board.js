@@ -172,7 +172,10 @@ function Compose(obj, prop, kind) {
 
     obj.prototype[prop + 'Add'] = function(obj, at) {
         obj.parent = this
-        if(typeof(at) == 'number') {
+        if(at) {
+            at = parseInt(at, 10)
+        }
+        if(!isNaN(at)) {
             this[prop].splice(at, 0, obj)
         } else {
             this[prop].push(obj)

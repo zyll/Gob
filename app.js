@@ -226,7 +226,7 @@ var server = express.createServer(
                             from.stickiesMove(sticky, to, at_pos)
                             board.save(function(err) {
                                 if(!err) {
-                                    event.emit('sticky:move', sticky, from, board.rev)
+                                    event.emit('sticky:move', sticky, from, at_pos, board.rev)
                                     res.redirect(board.url())
                                 } else {
                                     res.send(404)
@@ -301,9 +301,9 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         }
     }
 
-    var stickyMove = function(sticky, from, rev) {
+    var stickyMove = function(sticky, from, at, rev) {
         if(sticky.parent.parent.slug == listen_board) {
-            client.send({event: 'sticky:move', sticky: sticky.asData(), from: from.asData(), rev: rev})
+            client.send({event: 'sticky:move', sticky: sticky.asData(), from: from.asData(), at: at, rev: rev})
         }
     }
 

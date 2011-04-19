@@ -26,6 +26,7 @@ Board.prototype.connectStack = function() {
             self.inMove = { from: stack, sticky: sticky};
         },
         receive: function(event, ui) {
+            var pos = $.inArray(ui.item[0], $(ui.item).parent('ul').find('li'));
             var sticky = self.inMove.sticky;
             var to = self.getStack($(this).data('slug'));
             $.ajax({
@@ -33,12 +34,13 @@ Board.prototype.connectStack = function() {
                     "stack", self.inMove.from.slug,
                     "sticky", sticky.slug,
                     "move"].join('/'),
-                data: {to: to.slug},
+                data: {to: to.slug, at: pos},
                 type: 'post'
             })
             sticky.stack.removeSticky(sticky);
+            // todo : use pos here
             sticky.stack = to;
-            to.stickies.push(sticky);
+            to.stickies.splice(pos, 0, sticky);
         }
     });
 }
@@ -84,9 +86,12 @@ function Stack(element, board) {
 }
 
 Stack.prototype.add = function(el, pos) {
-    pos = pos || this.stickies.length;
     var ticket = new Ticket(el, this);
-    this.stickies.splice(pos, 0, ticket);
+    if(typeof(pos) == 'number') {
+        this.stickies.splice(pos, 0, ticket);
+    } else {
+        this.stickies.push(ticket);
+    }
 }
 
 Stack.prototype.removeSticky = function(sticky) {
@@ -102,11 +107,15 @@ Stack.prototype.getSticky = function(slug) {
     return null;
 }
 
-Stack.prototype.append = function(el) {
-    this.holder.append('<li>');
-    var element = this.holder.find('li:last')[0];
-    $(el).appendTo(element).attr('id', null);
-    this.add($(element).children()[0]);
+Stack.prototype.append = function(el, at) {
+    if(typeof(at) == 'number' && this.stickies.length >= 1 && (this.stickies.length - 1) >= at) {
+        var element = $('<li/>').append($(el)).insertBefore($(this.stickies[at].element).parent())
+        this.add($(element).children()[0], at);
+    } else {
+        this.holder.append('<li>');
+        var element = this.holder.find('li:last')[0];
+        this.add($(el).appendTo(element).attr('id', null));
+    }
 }
 
 function Ticket(element, stack) {
@@ -135,13 +144,15 @@ Ticket.prototype.setContent = function(element) {
     var self = this;
     this.slug = $(element).data('slug');
     $(this.element).find('.editable').live('click', function(event) {
-        var link = this
         event.preventDefault();
         $('#tplSticky').dialog({
             buttons: {
                 'Update': function() {
                     var that = this
-                    $.post($(link).attr('href'), $(this).find('form').serialize())
+                    var url = ['/board', self.stack.board.slug,
+                        'stack', self.stack.slug,
+                        'sticky', self.slug].join('/');
+                    $.post(url, $(this).find('form').serialize())
                         .success(function(data, statusCode, xhr) {
                             $(that).dialog('close');
                         })
@@ -213,12 +224,13 @@ $(document).ready( function() {
                         sticky.update($(msg.html));
                         break;
                     case 'sticky:move':
+                        console.log(msg)
                         var from = board.getStack(msg.from.slug);
                         var to = board.getStack(msg.sticky.parent.slug);
                         var sticky = from.getSticky(msg.sticky.slug);
-                        if(sticky) { // if we are the origin of the move.
+                        if(sticky) { // if we arent the origin of the move.
                             sticky.stack.removeSticky(sticky);
-                            to.append(sticky.remove())
+                            to.append(sticky.remove(), parseInt(msg.at, 10));
                         }
                         break;
                 }
