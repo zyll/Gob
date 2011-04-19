@@ -83,13 +83,14 @@ function Stack(element, board) {
     });
 }
 
-Stack.prototype.add = function(el) {
+Stack.prototype.add = function(el, pos) {
+    pos = pos || this.stickies.length;
     var ticket = new Ticket(el, this);
-    this.stickies.push(ticket);
+    this.stickies.splice(pos, 0, ticket);
 }
 
 Stack.prototype.removeSticky = function(sticky) {
-    var pos = $.inArray(sticky, this.stickies);
+    var pos = sticky.index();
     if(pos >= 0) {
         this.stickies.splice(pos, 1);
     }
@@ -104,7 +105,7 @@ Stack.prototype.getSticky = function(slug) {
 Stack.prototype.append = function(el) {
     this.holder.append('<li>');
     var element = this.holder.find('li:last')[0];
-    $(el).appendTo(element).attr('id', null)
+    $(el).appendTo(element).attr('id', null);
     this.add($(element).children()[0]);
 }
 
@@ -124,6 +125,10 @@ Ticket.prototype.remove = function() {
     this.stack.removeSticky(this);
     this.stack = null;
     return $(this.element).parent('li').remove().children();
+}
+
+Ticket.prototype.index = function() {
+    return $.inArray(this, this.stack.stickies)   
 }
 
 Ticket.prototype.setContent = function(element) {
@@ -202,9 +207,10 @@ $(document).ready( function() {
                         var stack = board.getStack(msg.sticky.parent.slug);
                         stack.append(msg.html);
                         break;
-                    case 'sticky:new':
+                    case 'sticky:update':
                         var stack = board.getStack(msg.sticky.parent.slug);
-                        stack.append(msg.html);
+                        var sticky = stack.getSticky(msg.sticky.slug);
+                        sticky.update($(msg.html));
                         break;
                     case 'sticky:move':
                         var from = board.getStack(msg.from.slug);
