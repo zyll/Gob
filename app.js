@@ -161,7 +161,7 @@ var server = express.createServer(
                         if(err) {
                             return res.send(500)
                         }
-                        event.emit('sticky:new', sticky)
+                        event.emit('sticky:new', sticky, board.rev)
                         res.redirect(sticky.url())
                     })
                 } else return res.send(404)
@@ -193,7 +193,7 @@ var server = express.createServer(
                         if(err) {
                             return res.send(500)
                         }
-                        event.emit('sticky:update', sticky)
+                        event.emit('sticky:update', sticky, board.rev)
                         res.redirect(sticky.url())
                     })
                 } else {
@@ -228,7 +228,6 @@ var server = express.createServer(
                                 if(!err) {
                                     event.emit('sticky:move', sticky, from)
                                     res.redirect(board.url())
-                                    //model.emit('stack:change', {board: board.slug, stacks: [from.slug, to.slug]})
                                 } else {
                                     res.send(404)
                                 }
@@ -286,35 +285,41 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
 
     var listen_board = null,
         listen_func = null
+    
+    var stickyNew = function(sticky, rev) {
+        if(sticky.parent.parent.slug == listen_board) {
+            jade.renderFile(__dirname + '/views/stickies/item.jade', {locals: {sticky: sticky}}, function(err, res) {
+                client.send({event: 'sticky:new', sticky: sticky.asData(), html: res, rev: rev})
+            })
+        }
+    }
+    var stickyUpdate = function(sticky, rev) {
+        if(sticky.parent.parent.slug == listen_board) {
+            jade.renderFile(__dirname + '/views/stickies/item.jade', {locals: {sticky: sticky}}, function(err, res) {
+                client.send({event: 'sticky:update', sticky: sticky.asData(), html: res, rev: rev})
+            })
+        }
+    }
 
     client.on('message', function(message){
+        // client can change the listenned board.
         if(message.board && listen_board != message.board) {
             listen_board = message.board
-            if(listen_func) {
-                event.removeListener('sticky', listen_func)
+            if(listen_board) {
+                event.removeListener('stickyNew', stickyNew)
             }
-            listen_func = function(sticky) {
-                console.log('event on '+ listen_board + ' sticky new')
-                console.log(sticky.parent.parent.slug, listen_board)
-                if(sticky.parent.parent.slug == listen_board) {
-                    jade.renderFile(__dirname + '/views/stickies/item.jade', {locals: {sticky: sticky}}, function(err, res) {
-                        console.log(res)
-                        client.send({event: 'sticky:new', data: {sticky: sticky.asData(), html: res}})
-                        console.log('event sent')
-                    })
-                }
-            }
-            event.on('sticky:new', listen_func)
-            console.log('listen '+ listen_board +' on sticky:new')
+            listen_board = message.board
+            
+            event.on('sticky:new', stickyNew)
+            event.on('sticky:update', stickyUpdate)
         }
     });
 
     client.on('disconnect', function(){
-        /*var listen_board = null
-        if(listen_func) {
-            boards.removeListener('board:save', listen_func)
-        }
-        listen_func = null*/
+        var listen_board = null
+        event.removeListener('stickyNew', stickyNew)
+        event.removeListener('stickyUpdate', stickyUpdate)
+        // todo other thing to destroy ?
         console.log('disconnect')
     });
 }));

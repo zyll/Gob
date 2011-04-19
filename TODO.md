@@ -1,14 +1,11 @@
 # todo
 - implement update (do the U of crud and use POST and PUT as in rest (using _put in form and middleware)).
-- use _rev on updating (everywhere ?)
 - removing a stack should remove its stickies too. Same is true for Board and Stack.
 - implement deploy ability.
 - implement user ability.
-- provide a service to be aware about any change on any type of object (using socket.io for browser agent, or any other kind of notif as email or a human or url callback for a server).
-- do tpl
+- provide other notif service than socket.io like pubsub or mail.
 - backbonise
-- event feedback
 - config file (server port, db conf ...)
 - backlog.
 - sticky should be find using only board slug and its own one, and optionaly using its actual stack slug.
-- moving sticky (stacks too ?)
+- moving sticky by pos (stacks too ?)

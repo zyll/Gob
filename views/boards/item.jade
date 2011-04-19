@@ -15,7 +15,7 @@ html(lang: "en")
       p ScrumBoard : #{board.name}
       a(href: board.url() + '/stack') add stack
     section
-      ul.board('data-slug': board.slug)
+      ul.board('data-slug': board.slug, 'data-rev': board.rev)
         -each stack in board.stacks
           != partial('../stacks/item', {stack: stack})
     - if (board.stacks.length)
