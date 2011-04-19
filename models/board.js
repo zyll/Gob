@@ -263,21 +263,17 @@ Model.Board.prototype.save = function(cb) {
     var saveAndFree = function() {
         var data = self.asData()
         var wrap = function(err, res) {
+            self.id = res._id
+            self.rev = res._rev
             _toSlug.forEach(function(item) {
                 item.obj.freeSlug(item.ns, item.slug)
             })
             cb(err, self)
         }
-        // todo : free all booked slug
         if(self.id) {
             self.model.db.save(self.id, data, wrap)
-            
         } else {
-            self.model.db.save(data, function(err, res) {
-                self.id = res._id
-                self.rev = res._rev
-                wrap(null)
-            })
+            self.model.db.save(data, wrap)
         }           
     }
     
