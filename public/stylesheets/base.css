@@ -134,3 +134,9 @@ aside ul li { display: inline; }
 .button.green:hover { 	background-color: hsl(88, 70%, 75%); }
 
 #tplSticky { display: none; }
+
+#socketState { display: block; width: 30px; height: 30px; }
+.disconnect { background-image: url(/images/disconnect.png); }
+.connect { background-image: url(/images/connect.png); }
+.editable { display: block; width: 30px; height: 30px; background-image: url(/images/edit.png); }
+section.trash.stack ul { display: block; width: 48px; height: 48px; background-image: url(/images/trash.png); }

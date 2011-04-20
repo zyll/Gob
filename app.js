@@ -19,6 +19,7 @@ var server = express.createServer(
     express.static(__dirname + '/public'),
     express.logger(),
     express.bodyParser(),
+    express.methodOverride(),
     express.router(function(app) {
 
        /**
@@ -263,6 +264,27 @@ var server = express.createServer(
         })
 
         /**
+         * Getting a sticky by it's slug
+         * @return 404 Not Found if it doesn't exist
+         */
+        app.del('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
+            new model.Board()
+                .get(escape(req.params.board), function(err, board) {
+                    if(err || !board) return res.send(404)
+                    var stack = board.stacksGet(escape(req.params.stack))
+                    if(!stack) return res.send(404)
+                    var sticky = stack.stickiesGet(escape(req.params.sticky))
+                    if(!sticky) return res.send(404)
+                    var data = sticky.asData()
+                    stack.stickiesRemove(sticky)
+                    board.save(function(err) {
+                        res.send(204)
+                        event.emit('sticky:remove', data, board.rev)
+                    })
+                })
+        })
+
+        /**
          * do deploy on a board.
          * @return 404 Not found, on stack empty or unknown.
          * @return 302 Redirect, with the content location pointing to the deployed stack.
@@ -307,6 +329,14 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         }
     }
 
+    var stickyRemove = function(sticky, rev) {
+        console.log('rzemove')
+        console.log(sticky)
+        if(sticky.parent.parent.slug == listen_board) {
+            client.send({event: 'sticky:remove', sticky: sticky, rev: rev})
+        }
+    }
+
     client.on('message', function(message){
         // client can change the listenned board.
         if(message.board && listen_board != message.board) {
@@ -314,21 +344,24 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
             if(listen_board) {
                 event.removeListener('sticky:new', stickyNew)
                 event.removeListener('sticky:update', stickyUpdate)
-                event.removeListener('sticky:move ', stickyMove)
+                event.removeListener('sticky:move', stickyMove)
+                event.removeListener('sticky:remove', stickyRemove)
             }
             listen_board = message.board
             
             event.on('sticky:new', stickyNew)
             event.on('sticky:update', stickyUpdate)
             event.on('sticky:move', stickyMove)
+            event.on('sticky:remove', stickyRemove)
         }
     });
 
     client.on('disconnect', function(){
         var listen_board = null
-        event.removeListener('stickyi:new', stickyNew)
+        event.removeListener('sticky:new', stickyNew)
         event.removeListener('sticky:update', stickyUpdate)
-        event.removeListener('sticky:move ', stickyMove)
+        event.removeListener('sticky:move', stickyMove)
+        event.removeListener('sticky:remove', stickyRemove)
         // todo other thing to destroy ?
         console.log('disconnect')
     });

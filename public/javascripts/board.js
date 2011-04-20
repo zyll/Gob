@@ -26,21 +26,31 @@ Board.prototype.connectStack = function() {
             self.inMove = { from: stack, sticky: sticky};
         },
         receive: function(event, ui) {
-            var pos = $.inArray(ui.item[0], $(ui.item).parent('ul').find('li'));
             var sticky = self.inMove.sticky;
-            var to = self.getStack($(this).data('slug'));
-            $.ajax({
-                url: ["/board", self.name,
-                    "stack", self.inMove.from.slug,
-                    "sticky", sticky.slug,
-                    "move"].join('/'),
-                data: {to: to.slug, at: pos},
-                type: 'post'
-            })
-            sticky.stack.removeSticky(sticky);
-            // todo : use pos here
-            sticky.stack = to;
-            to.stickies.splice(pos, 0, sticky);
+            if($(this).parent().hasClass('trash')) {
+                $.post(["/board", self.name,
+                        "stack", sticky.stack.slug,
+                        "sticky", sticky.slug].join('/'),
+                        {'_method': 'DELETE'}
+                )
+                sticky.remove();
+            } else {
+                var pos = $.inArray(ui.item[0], $(ui.item).parent('ul').find('li'));
+                var sticky = self.inMove.sticky;
+                var to = self.getStack($(this).data('slug'));
+                $.ajax({
+                    url: ["/board", self.name,
+                        "stack", self.inMove.from.slug,
+                        "sticky", sticky.slug,
+                        "move"].join('/'),
+                    data: {to: to.slug, at: pos},
+                    type: 'post'
+                })
+                sticky.stack.removeSticky(sticky);
+                // todo : use pos here
+                sticky.stack = to;
+                to.stickies.splice(pos, 0, sticky);
+            }
         }
     });
 }
@@ -210,6 +220,7 @@ $(document).ready( function() {
         socket.on('connect', function() {
             console.log('board ' + board.slug + ' connected');
             socket.send({board: board.slug});
+            $('#socketState').removeClass('disconnect').addClass('connect');
         });
         socket.on('message', function(msg) {
             if(msg.rev != board.rev) { // should not happen
@@ -224,13 +235,20 @@ $(document).ready( function() {
                         sticky.update($(msg.html));
                         break;
                     case 'sticky:move':
-                        console.log(msg)
                         var from = board.getStack(msg.from.slug);
                         var to = board.getStack(msg.sticky.parent.slug);
                         var sticky = from.getSticky(msg.sticky.slug);
                         if(sticky) { // if we arent the origin of the move.
                             sticky.stack.removeSticky(sticky);
                             to.append(sticky.remove(), parseInt(msg.at, 10));
+                        }
+                        break;
+                    case 'sticky:remove':
+                        console.log(msg)
+                        var from = board.getStack(msg.sticky.parent.slug);
+                        var sticky = from.getSticky(msg.sticky.slug);
+                        if(sticky) {
+                            sticky.remove();
                         }
                         break;
                 }
@@ -241,7 +259,10 @@ $(document).ready( function() {
             }
         });
 
-        socket.on('disconnect', function(){console.log('disconnet')})
+        socket.on('disconnect', function(){
+            $('#socketState').removeClass('connect').addClass('disconnect');
+            console.log('disconnet')
+        })
 
         // action to deploy the board.
         $('#deployBoard').bind('click', function(event) {

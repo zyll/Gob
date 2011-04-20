@@ -12,7 +12,6 @@ html(lang: "en")
   body
     header
       p ScrumBoard : #{board.name}
-      a(href: board.url() + '/stack') add stack
     section
       ul.board('data-slug': board.slug, 'data-rev': board.rev)
         -each stack in board.stacks
@@ -21,9 +20,11 @@ html(lang: "en")
       section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0]})
     section.trash.stack
       ul
-        li Trash
+        li
     aside
       ul
+        li.disconnect#socketState
+        li: a.button.pink(href: board.url() + '/stack') add stack
         - if (board.stacks.length)
           li: a#addSticky.button.pink(href: board.stacks[0].url() + '/sticky') New stickies
     footer: p Design by Zyll and Shoko

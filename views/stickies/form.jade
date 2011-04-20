@@ -1,6 +1,4 @@
 section
-  h1 stack: #{stack.name}
-  p add sticky
   form(method: 'post', action: stack.url() + '/sticky')
     div: label title
       input(type: 'text', name: 'title')
