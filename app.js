@@ -330,8 +330,6 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
     }
 
     var stickyRemove = function(sticky, rev) {
-        console.log('rzemove')
-        console.log(sticky)
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:remove', sticky: sticky, rev: rev})
         }
@@ -362,8 +360,6 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         event.removeListener('sticky:update', stickyUpdate)
         event.removeListener('sticky:move', stickyMove)
         event.removeListener('sticky:remove', stickyRemove)
-        // todo other thing to destroy ?
-        console.log('disconnect')
     });
 }));
 

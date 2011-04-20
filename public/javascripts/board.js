@@ -131,7 +131,7 @@ Stack.prototype.append = function(el, at) {
 function Ticket(element, stack) {
     this.stack = stack;
     this.element = element;
-    this.setContent(element)
+    this.setContent(element);
 }
 
 
@@ -153,7 +153,7 @@ Ticket.prototype.index = function() {
 Ticket.prototype.setContent = function(element) {
     var self = this;
     this.slug = $(element).data('slug');
-    $(this.element).find('.editable').live('click', function(event) {
+    $(this.element).find('.editable').bind('click', function(event) {
         event.preventDefault();
         $('#tplSticky').dialog({
             buttons: {
@@ -218,7 +218,6 @@ $(document).ready( function() {
         var socket = new io.Socket();
         socket.connect();
         socket.on('connect', function() {
-            console.log('board ' + board.slug + ' connected');
             socket.send({board: board.slug});
             $('#socketState').removeClass('disconnect').addClass('connect');
         });
@@ -244,7 +243,6 @@ $(document).ready( function() {
                         }
                         break;
                     case 'sticky:remove':
-                        console.log(msg)
                         var from = board.getStack(msg.sticky.parent.slug);
                         var sticky = from.getSticky(msg.sticky.slug);
                         if(sticky) {
@@ -261,7 +259,6 @@ $(document).ready( function() {
 
         socket.on('disconnect', function(){
             $('#socketState').removeClass('connect').addClass('disconnect');
-            console.log('disconnet')
         })
 
         // action to deploy the board.
