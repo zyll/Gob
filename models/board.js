@@ -58,7 +58,7 @@ function Slugify(obj, prop) {
         find_it()
     }
 }
-  
+
 /**
  * Main handler.
  * @param {Object} conf hash (name) or db
@@ -70,6 +70,7 @@ var Model = function(conf) {
     this.Board = function(data) {return new Model.Board(self, data)}
     this.Stack = function(data) {return new Model.Stack(self, data)}
     this.Sticky = function(data) {return new Model.Sticky(self, data)}
+    this.User = function(data) {return new Model.User(self, data)}
     this.slugBooker =  []
 }
 
@@ -116,7 +117,26 @@ Model.designs = [
                 }
             }
         }
+    }},
+    {name: '_design/users',
+     views: {
+        by_nick: {
+            map: function (doc) {
+                if (doc.type == 'user') {
+                    emit(doc.nick, doc)
+                }
+            }
+        }
+    }},
+    {name: '_design/rights',
+     views: {
+        by_slug: {
+            map: function (doc) {
+                emit([doc.type, doc.slug], doc.allow)
+            }
+        }
     }}
+
 ]
 
 Model.prototype.migrate = function(next) {
@@ -206,6 +226,83 @@ function Compose(obj, prop, kind) {
 
 }
 
+Model.User = function(model, data) {
+    this.model = model
+    data  = data || {}
+    var self = this
+    this.nick = data.nick
+    this.password = data.password
+    this.id = data._id
+    this.rev = data._rev
+}
+
+Model.User.prototype.asData = function(cb) {
+    return {
+        type: 'user',
+        nick: this.nick,
+        password: this.password,
+    }
+}
+
+Model.User.prototype.save = function(cb) {
+    var self = this
+    var data = this.asData()
+    var wrap = function(err, res) {
+        self.id = res._id
+        self.rev = res._rev
+        cb(err, self)
+    }
+    if(self.id) {
+        self.model.db.save(self.id, data, wrap)
+    } else {
+        self.model.db.save(data, wrap)
+    }           
+}
+
+Model.User.prototype.get = function(nick, cb) {
+    var self = this
+    this.model.db.view('users/by_nick',
+                 {key: nick},
+                 function(err, res) {
+                     if(err || res.length == 0) {
+                         cb(err, null)
+                     } else {
+                         cb(err, new self.model.User(res[0].value))
+                     }
+                 })
+}
+
+/**
+ * @fixme always fetch obj in db for now.
+ * @todo allow rights using groups.
+ * @todo allow rights on other obj than board.
+ */
+Model.User.prototype.can = function(obj, level) {
+    var can = new Cannable()
+    var self = this
+    this.model.db.view('rights/by_slug', {key: ['board', obj.slug]}, function(err, res) {
+        if(!err && res.length != 0 && (typeof(res[0].value.users[self.nick]) == 'number' && res[0].value.users[self.nick] >= level)) {
+            can.accept_cb()
+        } else {
+            can.refuse_cb()
+        }
+    })
+    return can
+}
+
+Cannable = function() {
+    this.accept_cb = function() {}
+    this.refuse_cb = function() {}
+}
+Cannable.prototype.accept = function(accept_cb) {
+    this.accept_cb = accept_cb
+    return this
+}
+Cannable.prototype.refuse = function(refuse_cb) {
+    this.refuse_cb = refuse_cb
+    return this
+}
+
 /**
  * a Board.
  * @param [String] board name
@@ -219,8 +316,10 @@ Model.Board = function(model, data) {
     this.slug = data.slug
     this.id = data._id
     this.rev = data._rev
+    this.allow = data.allow || {users: {}, groups: {}}
     this.stacksSet(data)
 }
+
 Model.Board.prototype.asData = function(cb) {
     return {
         type: 'board',
@@ -228,12 +327,14 @@ Model.Board.prototype.asData = function(cb) {
         slug: this.slug,
         stacks: this.stacks.map(function(stack) {
             return stack.asData()
-        })
+        }),
+        allow: this.allow
     }
 }
 
 Slugify(Model.Board, 'name')
 Compose(Model.Board, 'stacks', 'Stack')
+
 /** 
  * save board data.
  * @params {Function(err)} callback on complete
@@ -322,6 +423,24 @@ Model.Board.prototype.all = function(cb) {
 
 Model.Board.prototype.url = function() {
     return '/board/' + this.slug
+}
+
+/**
+ * rights: 0: none, 1: read, 2: read/write, 3: read/write/admin
+ * @chainable
+ */
+Model.Board.prototype.authorize = function(user, rights) {
+    if(rights == 0) {
+        for(var i in this.allow.users) {
+            if(this.allow.users.nick = user.nick) {
+                delete this.allow.users[user.nick]
+                break
+            }
+        }
+    } else {
+        this.allow.users[user.nick] = rights
+    }
+    return this
 }
 
 /**

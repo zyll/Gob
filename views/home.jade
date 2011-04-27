@@ -1,3 +1,10 @@
 h1 Board
 p Welcome aboard !
-a(href: '/boards') Fligths
+
+- if (user)
+  a(href: '/boards') Fligths
+  a(href: '/logout') Logout
+- else
+  a(href: '/user') Register
+  a(href: '/login') Login
+

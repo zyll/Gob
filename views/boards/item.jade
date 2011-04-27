@@ -24,7 +24,8 @@ html(lang: "en")
     aside
       ul
         li.disconnect#socketState
-        li: a.button.pink(href: board.url() + '/stack') add stack
+        li: a.users(href: board.url() + '/allow')
+        li: a.folderAdd(href: board.url() + '/stack', title: "Add stack")
         - if (board.stacks.length)
-          li: a#addSticky.button.pink(href: board.stacks[0].url() + '/sticky') New stickies
+          li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
     footer: p Design by Zyll and Shoko

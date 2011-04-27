@@ -48,95 +48,17 @@ ul li article { -webkit-transform: scale(0.7); }
 ul li.ui-sortable-helper article:hover { -webkit-transform: scale(1); z-index: 2000; }
 /*ul li article:hover { -webkit-transform: scale(1.5); z-index: 2000; }*/
 
-
-
-
-/* bouton */
 aside {}
 aside ul { text-align: center; }
 aside ul li { display: inline; }
-.button {
-
-/* text */
-	text-decoration: 		none;
-	font: 					24px/1em 'Droid Sans', sans-serif;
-	font-weight: 			bold;
-	text-shadow: 			rgba(255,255,255,.5) 0 1px 0;
-	-webkit-user-select: 	none;
-	-moz-user-select: 		none;
-	user-select: 			none;
-	
-	
-/* layout */
-	padding: 				.5em .6em .4em .6em;
-	margin: 				.5em;
-	display: 				inline-block;
-	position: 				relative;
-	
-	-webkit-border-radius: 	8px;
-	-moz-border-radius: 	8px;
-	border-radius: 	8px;
-	
-/* effects */
-	border-top: 		1px solid rgba(255,255,255,0.8);
-	border-bottom: 		1px solid rgba(0,0,0,0.1);
-	
-	background-image: 	-webkit-gradient(radial, 50% 0, 100, 50% 0, 0, from( rgba(255,255,255,0) ), to( rgba(255,255,255,0.7) )), url(/images/noise.png);
-	background-image: 	-moz-radial-gradient(top, ellipse cover, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%), url(/images/noise.png);
-	background-image: 	gradient(radial, 50% 0, 100, 50% 0, 0, from( rgba(255,255,255,0) ), to( rgba(255,255,255,0.7) )), url(/images/noise.png);
-
-	-webkit-transition: background .2s ease-in-out;
-	-moz-transition: 	background .2s ease-in-out;
-	transition: 		background .2s ease-in-out;
-	
-/* color */
-	color: 				hsl(0, 0%, 40%) !important;
-	background-color: 	hsl(0, 0%, 75%);
-	
-	-webkit-box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-						hsl(0, 0%, 60%) 0 .1em 3px, hsl(0, 0%, 45%) 0 .3em 1px, /* color border */
-						rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-	-moz-box-shadow: 	inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-						hsl(0, 0%, 60%) 0 .1em 3px, hsl(0, 0%, 45%) 0 .3em 1px, /* color border */
-						rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-	box-shadow:		 	inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-						hsl(0, 0%, 60%) 0 .1em 3px, hsl(0, 0%, 45%) 0 .3em 1px, /* color border */
-						rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-}
-
-.button.pink {
-	color: 				hsl(340, 100%, 30%) !important;
-	background-color: 	hsl(340, 100%, 75%);
-	-webkit-box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-							hsl(340, 70%, 50%) 0 .1em 3px, hsl(340, 80%, 40%) 0 .3em 1px, /* color border */
-							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-	-moz-box-shadow: 	inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-							hsl(340, 70%, 50%) 0 .1em 3px, hsl(340, 80%, 40%) 0 .3em 1px, /* color border */
-							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-	box-shadow: 		inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-							hsl(340, 70%, 50%) 0 .1em 3px, hsl(340, 80%, 40%) 0 .3em 1px, /* color border */
-							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-}
-.button.pink:hover { 	background-color: hsl(340, 100%, 83%); }
-.button.green {
-	color: 				hsl(88, 70%, 30%) !important;
-	background-color: 	hsl(88, 70%, 60%);
-	-webkit-box-shadow: inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-							hsl(88, 70%, 40%) 0 .1em 3px, hsl(88, 70%, 30%) 0 .3em 1px, /* color border */
-							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-	-moz-box-shadow: 	inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-							hsl(88, 70%, 40%) 0 .1em 3px, hsl(88, 70%, 30%) 0 .3em 1px, /* color border */
-							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-	box-shadow:		 	inset rgba(255,254,255,0.6) 0 0.3em .3em, inset rgba(0,0,0,0.15) 0 -0.1em .3em, /* inner shadow */ 
-							hsl(88, 70%, 40%) 0 .1em 3px, hsl(88, 70%, 30%) 0 .3em 1px, /* color border */
-							rgba(0,0,0,0.2) 0 .5em 5px; /* drop shadow */
-}
-.button.green:hover { 	background-color: hsl(88, 70%, 75%); }
 
 #tplSticky { display: none; }
 
-#socketState { display: block; width: 30px; height: 30px; }
+#socketState { display: inline-block; width: 30px; height: 30px; }
 .disconnect { background-image: url(/images/disconnect.png); }
 .connect { background-image: url(/images/connect.png); }
-.editable { display: block; width: 30px; height: 30px; background-image: url(/images/edit.png); }
-section.trash.stack ul { display: block; width: 48px; height: 48px; background-image: url(/images/trash.png); }
+.editable { display: inline-block; width: 30px; height: 30px; background-image: url(/images/edit.png); }
+.folderAdd { display: inline-block; width: 48px; height: 48px; background-image: url(/images/folder.png); }
+.stickyAdd { display: inline-block; width: 48px; height: 48px; background-image: url(/images/sticky.png); }
+aside ul li a.users { display: inline-block; width: 48px; height: 48px; background-image: url(/images/users.png); }
+section.trash.stack ul { display: inline-block; width: 48px; height: 48px; background-image: url(/images/trash.png); }

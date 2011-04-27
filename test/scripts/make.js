@@ -43,13 +43,16 @@ module.exports = {
         var board1 = Futures.future()
         var board2 = Futures.future()
         var board3 = Futures.future()
+        var user1 = Futures.future()
         done.add(board1)
         done.add(board2)
         done.add(board3)
+        done.add(user1)
 
         var db = '/board_test_board'
         r('PUT', db).addListener('success', function() {
             r('PUT', db + "/board1", {type: 'board', name: 'conquer the world', slug: 'conquer-th',
+                allow: {users: {}, groups: {}},
                 stacks: [
                     {type: 'stack', name: 'todo', slug: 'todo',
                         stickies: [
@@ -65,10 +68,14 @@ module.exports = {
                 ]})
                 .addListener('success', board1.deliver) 
             
-            r('PUT', db + "/board2", {type: 'board', name: 'board2', slug: 'board2', stacks: []})
+            r('PUT', db + "/board2", {type: 'board', name: 'board2', slug: 'board2',
+                allow: {users: {}, groups: {}},
+                stacks: []
+            })
                 .addListener('success', board2.deliver)
 
             r('PUT', db + "/board3", {type: 'board', name: 'moving', slug: 'moving',
+                allow: {users: {user1: 1}, groups: {}},
                 stacks: [
                     {type: 'stack', name: 'todo', slug: 'todo',
                         stickies: [
@@ -85,7 +92,10 @@ module.exports = {
                         stickies: []},
                 ]})
                 .addListener('success', board3.deliver) 
+            
+            r('PUT', db + "/user1", {type: 'user', nick: 'user1', password: 'secret'})
+                .addListener('success', user1.deliver)
         });
-        return done
+return done
     }
 }

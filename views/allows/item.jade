@@ -1,0 +1,13 @@
+- var rightsLevels = ['none', 'read', 'write', 'admin' ]
+ul
+  - each rights, user in board.allow.users
+    li #{user}: #{rightsLevels[rights]}
+form(method: 'post')
+  fieldset
+    p: label nick
+      input(name: 'nick')
+    p level : 
+      - each right, index in rightsLevels
+        label #{right}
+          input(type: 'radio', name: 'level', value: index)
+    p: input(type: 'submit', value: 'update') 
