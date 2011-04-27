@@ -54,6 +54,7 @@ aside ul li { display: inline; }
 
 #tplSticky { display: none; }
 
+section.trash.stack ul { display: inline-block; width: 48px; height: 48px; background-image: url(/images/trash.png); }
 #socketState { display: inline-block; width: 30px; height: 30px; }
 .disconnect { background-image: url(/images/disconnect.png); }
 .connect { background-image: url(/images/connect.png); }
@@ -61,4 +62,8 @@ aside ul li { display: inline; }
 .folderAdd { display: inline-block; width: 48px; height: 48px; background-image: url(/images/folder.png); }
 .stickyAdd { display: inline-block; width: 48px; height: 48px; background-image: url(/images/sticky.png); }
 aside ul li a.users { display: inline-block; width: 48px; height: 48px; background-image: url(/images/users.png); }
-section.trash.stack ul { display: inline-block; width: 48px; height: 48px; background-image: url(/images/trash.png); }
+aside ul li.rights { display: inline-block; width: 30px; height: 30px; } 
+aside ul li.rights.read { background-image: url(/images/read.png); }
+aside ul li.rights.write { background-image: url(/images/write.png); }
+aside ul li.rights.admin { background-image: url(/images/admin.png); }
+aside ul li.rights img{ width: 30px; height: 30px; } 

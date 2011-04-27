@@ -13,19 +13,22 @@ html(lang: "en")
     header
       p ScrumBoard : #{board.name}
     section
-      ul.board('data-slug': board.slug, 'data-rev': board.rev)
+      ul.board('data-slug': board.slug, 'data-rev': board.rev, 'data-rights': rights)
         -each stack in board.stacks
-          != partial('../stacks/item', {stack: stack})
-    - if (board.stacks.length)
-      section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0]})
+          != partial('../stacks/item', {stack: stack, rights: rights})
+    - if (board.stacks.length && rights >= 2)
+      section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
     section.trash.stack
       ul
         li
     aside
       ul
-        li.disconnect#socketState
         li: a.users(href: board.url() + '/allow')
-        li: a.folderAdd(href: board.url() + '/stack', title: "Add stack")
-        - if (board.stacks.length)
+        - if (rights >= 2)
+            li: a.folderAdd(href: board.url() + '/stack', title: "Add stack")
+        - if (board.stacks.length && rights >= 2)
           li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
+        li.disconnect#socketState
+        - each val, key in ['read', 'write', 'admin']
+          li(class: 'rights ' + val): img(src: '/images/' + (rights > key ? 'enable' : 'disable') + '.png')
     footer: p Design by Zyll and Shoko

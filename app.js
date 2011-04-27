@@ -123,11 +123,11 @@ var server = express.createServer(
             if(req.session.user) {
                 var user = new model.User(req.session.user)
                 user.can(new model.Board({slug: escape(req.params.board)}), 1)
-                    .accept(function() {
+                    .accept(function(level) {
                         new model.Board()
                             .get(escape(req.params.board), function(err, board) {
                             if(!err && board) {
-                                res.render('boards/item', {locals: {board: board}, layout: false})
+                                res.render('boards/item', {locals: {board: board, user: user, rights: level}, layout: false})
                             } else res.send(404)
                         })
                     })

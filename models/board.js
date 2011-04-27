@@ -282,7 +282,7 @@ Model.User.prototype.can = function(obj, level) {
     var self = this
     this.model.db.view('rights/by_slug', {key: ['board', obj.slug]}, function(err, res) {
         if(!err && res.length != 0 && (typeof(res[0].value.users[self.nick]) == 'number' && res[0].value.users[self.nick] >= level)) {
-            can.accept_cb()
+            can.accept_cb(res[0].value.users[self.nick])
         } else {
             can.refuse_cb()
         }

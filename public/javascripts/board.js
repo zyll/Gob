@@ -4,6 +4,7 @@ function Board(element) {
     this.element = element;
     this.slug = $(element).data('slug');
     this.rev = $(element).data('rev');
+    this.rights = $(element).data('rights');
     this.stacks = [];
     this.element.find('.stack').each(function() {
         var stack = new Stack($(this), self);
@@ -183,37 +184,38 @@ $(document).ready( function() {
     $('.board').each(function() {
         // instanciate the board
         var board = new Board($(this));
-        board.name = location.href.split('/').pop()
+        board.name = location.href.split('/').pop();
 
-        board.element.bind('ticket:new', function(event, sticky, stack) {
-            $.ajax({
-                url: ["/board", board.name,
-                    "stack", from,
-                    "sticky"].join('/'),
-                data: sticky,
-                type: 'post'
+        if(board.rights >= 2) {
+            board.element.bind('ticket:new', function(event, sticky, stack) {
+                $.ajax({
+                    url: ["/board", board.name,
+                        "stack", from,
+                        "sticky"].join('/'),
+                    data: sticky,
+                    type: 'post'
+                });
             });
-       
-        });
-        var trash = new Stack($("section.trash"), board);
-        board.addStack(trash);
-        board.connectStack();
-        // use template to add new ticket to the first stack
-        $('#addSticky').bind('click', function(event) {
-            event.preventDefault();
-            $('#tplSticky').dialog({
-                buttons: {
-                    'Create': function() {
-                        var self = this
-                        var form = $(this).find('form');
-                        $.ajax(form.attr('action'), {type: form.attr('method'), data: form.serialize()})
-                            .success(function(data, statusCode, xhr) {
-                                $(self).dialog('close');
-                            })
+            var trash = new Stack($("section.trash"), board);
+            board.addStack(trash);
+            board.connectStack();
+            // use template to add new ticket to the first stack
+            $('#addSticky').bind('click', function(event) {
+                event.preventDefault();
+                $('#tplSticky').dialog({
+                    buttons: {
+                        'Create': function() {
+                            var self = this
+                            var form = $(this).find('form');
+                            $.ajax(form.attr('action'), {type: form.attr('method'), data: form.serialize()})
+                                .success(function(data, statusCode, xhr) {
+                                    $(self).dialog('close');
+                                })
+                        }
                     }
-                }
+                });
             });
-        });
+        }
  
         var socket = new io.Socket();
         socket.connect();
