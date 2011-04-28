@@ -47,7 +47,7 @@ var server = express.createServer(
                     .knownBy(req.session.user.nick, function(err, boards) {
                         res.render('user/item', {locals: {boards: boards, user: new model.User(req.session.user)}})
                     })
-            } else res.render('user/form')
+            } else res.render('user/form', {user: null})
         })
 
         /**
