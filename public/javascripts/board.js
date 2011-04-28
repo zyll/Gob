@@ -136,8 +136,8 @@ function Ticket(element, stack) {
 }
 
 Ticket.fromTpl = function(sticky) {
-    var tpl = $('#tplSticky').clone();
-    tpl.attr('id', null);
+    var tpl = $('#tplSticky article').clone();
+    tpl.data('slug', sticky.slug);
     $.each(['title', 'content', 'user'], function(i, item) {
         tpl.find('.' + item).html(sticky[item]);
     })
