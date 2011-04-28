@@ -2,7 +2,7 @@
 - implement update (do the U of crud and use POST and PUT as in rest (using _put in form and middleware)).
 - removing a stack should remove its stickies too. Same is true for Board and Stack.
 - implement deploy ability.
-- implement user ability.
+- user avatar.
 - provide other notif service than socket.io like pubsub or mail.
 - backbonise
 - config file (server port, db conf ...)

@@ -32,10 +32,15 @@ var server = express.createServer(
         })
 
         /**
-         * get the form to register
+         * get the user info or the form to register if not loged.
          */
         app.get('/user', function(req, res, next) {
-            res.render('user/form')
+            if(req.session.user) {
+                new model.Board()
+                    .knownBy(req.session.user.nick, function(err, boards) {
+                        res.render('boards/all', {locals: {boards: boards, user: new model.User(req.session.user)}})
+                    })
+            } else res.render('user/form')
         })
 
         /**
@@ -49,20 +54,19 @@ var server = express.createServer(
                     nick: req.body.nick,
                     password: req.body.password})
                 user.save(function(ret) {
-                    res.render('user/confirm', {locals: {user: user}})
                     req.session.user = user
+                    res.redirect('/user')
                 })
             } else res.render('user/form')
         })
 
         app.get('/login', function(req, res, next) {
-            res.render('user/login')
+            res.render('user/login', {layout: false})
         })
         app.post('/login', function(req, res, next) {
             if(req.body.nick) {
                 new model.User()
                     .get(req.body.nick, function(err, user) {
-                        console.log(arguments)
                     if(!err && user && user.password == req.body.password) {
                         req.session.user = user
                         res.render('home', {locals: {user: user}})
@@ -73,20 +77,6 @@ var server = express.createServer(
         app.get('/logout', function(req, res, next) {
             req.session.destroy()
             res.redirect('/')
-        })
-
-        /**
-         * Boards list
-         */
-        app.get('/boards', function(req, res, next) {
-            if(req.session.user) {
-                new model.Board()
-                    .all(function(err, boards) {
-                        res.render('boards/all', {locals: {boards: boards}})
-                    })
-            } else {
-                return res.send(401)
-            }
         })
 
         /**
@@ -127,7 +117,7 @@ var server = express.createServer(
                         new model.Board()
                             .get(escape(req.params.board), function(err, board) {
                             if(!err && board) {
-                                res.render('boards/item', {locals: {board: board, user: user, rights: level}, layout: false})
+                                res.render('boards/item', {locals: {board: board, user: user, rights: level}, layout: 'boards/layout'})
                             } else res.send(404)
                         })
                     })
@@ -136,17 +126,17 @@ var server = express.createServer(
         })
 
         /**
-         * Getting the board auth by it's slug
+         * Getting the board users and auth management.
          * @return 404 Not Found if it doesn't exist
          */
-        app.get('/board/:board/allow', function(req, res, next) {
+        app.get('/board/:board/users', function(req, res, next) {
             if(req.session.user) {
-                new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 1)
-                    .accept(function() {
+                var user = new model.User(req.session.user)
+                user.can(new model.Board({slug: escape(req.params.board)}), 1)
+                    .accept(function(rights) {
                         new model.Board().get(escape(req.params.board), function(err, board) {
                             if(!err && board) {
-                                res.render('allows/item.jade', {locals: {board: board}})
+                                res.render('boards/users/edit.jade', {locals: {board: board, rights: rights, user: user}})
                             } else res.send(404)
                         })
                     })
@@ -159,7 +149,7 @@ var server = express.createServer(
          * @return 302 Redirect on done.
          * @return 404 Not Found if it doesn't exist.
          */
-        app.post('/board/:board/allow', function(req, res, next) {
+        app.post('/board/:board/users', function(req, res, next) {
             if(req.session.user) {
                 var user = new model.User(req.session.user)
                 user.can(new model.Board({slug: escape(req.params.board)}), 3)
@@ -169,7 +159,7 @@ var server = express.createServer(
                         }
                         new model.Board().get(escape(req.params.board), function(err, board) {
                             board.authorize({nick: req.body.nick}, parseInt(req.body.level))
-                                .save(function() { res.redirect(board.url() + '/allow') })
+                                .save(function() { res.redirect(board.url() + '/users') })
                              })
                     })
                     .refuse(function() { res.send(401) })

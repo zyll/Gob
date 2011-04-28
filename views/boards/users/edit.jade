@@ -1,0 +1,9 @@
+- if (rights >= 1)
+  div!= partial('all', {board: board})
+- if (rights == 3)
+  div!= partial('form')
+aside
+  ul.tools
+    li: a.board(href: board.url(), title: "Back to board")
+    li.disconnect#socketState
+    span!= partial('rights', {item_rights: rights})

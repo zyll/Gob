@@ -1,34 +1,20 @@
-!!! 5
-html(lang: "en")
-  head
-    meta(charset: "utf-8")
-    title Board
-    link(href: "/stylesheets/base.css", rel: "stylesheet")
-    link(href: "/stylesheets/smoothness/jquery-ui-1.8.11.custom.css", rel: "stylesheet")
-    script(type: "text/javascript", src: "/javascripts/jquery-1.5.2.min.js")
-    script(type: "text/javascript", src: "/javascripts/jquery-ui-1.8.11.custom.min.js")
-    script(type: "text/javascript", src: "/javascripts/socket.io.js")
-    script(type: "text/javascript", src: "/javascripts/board.js")
-  body
-    header
-      p ScrumBoard : #{board.name}
-    section
-      ul.board('data-slug': board.slug, 'data-rev': board.rev, 'data-rights': rights)
-        -each stack in board.stacks
-          != partial('../stacks/item', {stack: stack, rights: rights})
+header
+  p ScrumBoard : #{board.name}
+section
+  ul.board('data-slug': board.slug, 'data-rev': board.rev, 'data-rights': rights)
+    -each stack in board.stacks
+      != partial('../stacks/item', {stack: stack, rights: rights})
+- if (board.stacks.length && rights >= 2)
+  section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
+section.trash.stack
+  ul
+    li
+aside
+  ul
+    li: a.users(href: board.url() + '/users', title: "Users list")
+    - if (rights >= 2)
+        li: a.folderAdd(href: board.url() + '/stack', title: "Add stack")
     - if (board.stacks.length && rights >= 2)
-      section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
-    section.trash.stack
-      ul
-        li
-    aside
-      ul
-        li: a.users(href: board.url() + '/allow')
-        - if (rights >= 2)
-            li: a.folderAdd(href: board.url() + '/stack', title: "Add stack")
-        - if (board.stacks.length && rights >= 2)
-          li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
-        li.disconnect#socketState
-        - each val, key in ['read', 'write', 'admin']
-          li(class: 'rights ' + val): img(src: '/images/' + (rights > key ? 'enable' : 'disable') + '.png')
-    footer: p Design by Zyll and Shoko
+      li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
+    li.disconnect#socketState
+    span!= partial('users/rights', {item_rights: rights})

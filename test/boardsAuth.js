@@ -51,8 +51,17 @@ vows.describe('Model.User').addBatch({
                 'it should callback on refuse': function() {
                     assert.ok(true)
                 }
-            }
-
+            },
+            'when asking user1 boards list"': {
+                topic: function(err, user) {
+                    new user.model.Board()
+                        .knownBy('user1', this.callback)
+                },
+                'it should find 1 board named "moving"': function(err, boards) {
+                    assert.equal(boards.length, 1)
+                    assert.equal(boards[0].name, "moving")
+                }
+            },
         },
     }
 }).addBatch({

@@ -7,12 +7,7 @@ html(lang: "en")
     link(href: "/stylesheets/smoothness/jquery-ui-1.8.11.custom.css", rel: "stylesheet")
     script(type: "text/javascript", src: "/javascripts/jquery-1.5.2.min.js")
     script(type: "text/javascript", src: "/javascripts/jquery-ui-1.8.11.custom.min.js")
-  body
-    h1 Board
-    - if (user)
-      a(href: '/user') me
-      a(href: '/logout') Logout
-    - else
-      a(href: '/user') Register
-      a(href: '/login') Login
-    div.content!= body
+    script(type: "text/javascript", src: "/javascripts/socket.io.js")
+    script(type: "text/javascript", src: "/javascripts/board.js")
+  body!= body
+    footer: p Design by Zyll and Shoko

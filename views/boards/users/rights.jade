@@ -1,0 +1,3 @@
+- each val, key in ['read', 'write', 'admin']
+  li(class: 'rights ' + val)
+    img(src: '/images/' + (item_rights > key ? 'enable' : 'disable') + '.png')

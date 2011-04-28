@@ -90,7 +90,17 @@ Model.designs = [
                     emit(doc.slug, {slug: doc.slug, name: doc.name})
                 }
             }
+        },
+        by_nick: {
+            map: function (doc) {
+                if (doc.type == 'board') {
+                    for(user in doc.allow.users) {
+                        emit(user, doc)
+                    }
+                }
+            }
         }
+
     }},
     {name: '_design/stacks',
      views: {
@@ -411,6 +421,23 @@ Model.Board.prototype.get = function(slug, cb) {
 Model.Board.prototype.all = function(cb) {
     var self = this
     this.model.db.view('boards/ligth', function(err, res) {
+        if(err || res.length == 0) {
+            cb(err, res)
+        } else {
+            cb(err, res.map(function(board) {
+                return new self.model.Board(board)
+            }))
+        }
+    })
+}
+
+/**
+ * get a ligth boards list.
+ * @param {Function} called on result with err and res args
+ */
+Model.Board.prototype.knownBy = function(nick, cb) {
+    var self = this
+    this.model.db.view('boards/by_nick', {key: nick}, function(err, res) {
         if(err || res.length == 0) {
             cb(err, res)
         } else {
