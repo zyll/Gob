@@ -2,4 +2,4 @@ header: p User info
 section
   h3 Name : #{user.nick}
   h3 Boards
-  div!= partial('/boards/all', {boards: boards, user: user})
+  div!= partial('../boards/all', {boards: boards, user: user})

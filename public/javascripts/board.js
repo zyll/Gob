@@ -135,10 +135,22 @@ function Ticket(element, stack) {
     this.setContent(element);
 }
 
+Ticket.fromTpl = function(sticky) {
+    var tpl = $('#tplSticky').clone();
+    tpl.attr('id', null);
+    $.each(['title', 'content', 'user'], function(i, item) {
+        tpl.find('.' + item).html(sticky[item]);
+    })
+    return tpl;
+}
 
-Ticket.prototype.update = function(element) {
-    $(this.element).html($(element).children());
-    this.setContent(element);
+
+Ticket.prototype.update = function(sticky) {
+    var self = this;
+    $.each(['title', 'content', 'user'], function(i, item) {
+        $(self.element).find('.' + item).html(sticky[item]);
+    })
+    this.setContent(this.element);
 }
 
 Ticket.prototype.remove = function() {
@@ -156,7 +168,7 @@ Ticket.prototype.setContent = function(element) {
     this.slug = $(element).data('slug');
     $(this.element).find('.editable').bind('click', function(event) {
         event.preventDefault();
-        $('#tplSticky').dialog({
+        $('#tplStickyForm').dialog({
             buttons: {
                 'Update': function() {
                     var that = this
@@ -202,7 +214,7 @@ $(document).ready( function() {
             // use template to add new ticket to the first stack
             $('#addSticky').bind('click', function(event) {
                 event.preventDefault();
-                $('#tplSticky').dialog({
+                $('#tplStickyForm').dialog({
                     buttons: {
                         'Create': function() {
                             var self = this
@@ -224,16 +236,16 @@ $(document).ready( function() {
             $('#socketState').removeClass('disconnect').addClass('connect');
         });
         socket.on('message', function(msg) {
-            if(msg.rev != board.rev) { // should not happen
+            if(msg.rev != board.rev) {
                 switch(msg.event) {
                     case 'sticky:new':
                         var stack = board.getStack(msg.sticky.parent.slug);
-                        stack.append(msg.html);
+                        stack.append(Ticket.fromTpl(msg.sticky));
                         break;
                     case 'sticky:update':
                         var stack = board.getStack(msg.sticky.parent.slug);
                         var sticky = stack.getSticky(msg.sticky.slug);
-                        sticky.update($(msg.html));
+                        sticky.update(msg.sticky);
                         break;
                     case 'sticky:move':
                         var from = board.getStack(msg.from.slug);
@@ -253,7 +265,7 @@ $(document).ready( function() {
                         break;
                 }
                 board.rev = msg.rev; // updating board current rev.
-            } else {
+            } else { // should not happen
                 // todo : throw ?
                 // console.log('board rev should not match: actual = ' , board.rev , ' ,  message = ', msg.rev)
             }

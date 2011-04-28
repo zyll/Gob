@@ -52,6 +52,7 @@ aside {}
 aside ul { text-align: center; }
 aside ul li { display: inline; }
 
+#tplStickyForm { display: none; }
 #tplSticky { display: none; }
 
 section.trash.stack ul { display: inline-block; width: 48px; height: 48px; background-image: url(/images/trash.png); }

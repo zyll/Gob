@@ -28,7 +28,14 @@ var server = express.createServer(
         * Home
         */
         app.get('/', function(req, res, next) {
-            res.render('home', {locals: {user: req.session.user}})
+            if(req.session.user) {
+                new model.Board()
+                    .knownBy(req.session.user.nick, function(err, boards) {
+                        res.render('user/item', {locals: {boards: boards, user: new model.User(req.session.user)}})
+                    })
+            } else {
+                res.render('home', {locals: {user: req.session.user}})
+            }
         })
 
         /**
@@ -38,7 +45,7 @@ var server = express.createServer(
             if(req.session.user) {
                 new model.Board()
                     .knownBy(req.session.user.nick, function(err, boards) {
-                        res.render('boards/all', {locals: {boards: boards, user: new model.User(req.session.user)}})
+                        res.render('user/item', {locals: {boards: boards, user: new model.User(req.session.user)}})
                     })
             } else res.render('user/form')
         })
@@ -69,7 +76,7 @@ var server = express.createServer(
                     .get(req.body.nick, function(err, user) {
                     if(!err && user && user.password == req.body.password) {
                         req.session.user = user
-                        res.render('home', {locals: {user: user}})
+                        res.redirect('/')
                     } else res.send(401)
                 })
             } else res.render('user/login')
@@ -173,14 +180,14 @@ var server = express.createServer(
          */
         app.get('/board/:board/stack', function(req, res, next) {
             if(req.session.user) {
-                new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
-                    .accept(function() {
+                var user = new model.User(req.session.user)
+                user.can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .accept(function(rights) {
                         new model.Board()
                             .get(escape(req.params.board), function(err, board) {
                                 if(err || !board) res.send(404)
                                 else {
-                                    res.render('stacks/form', {locals: {board: board}})
+                                    res.render('stacks/form', {locals: {board: board, user: user, rights: rights}})
                                 }
                             })
                     })
@@ -222,11 +229,11 @@ var server = express.createServer(
             if(req.session.user) {
                 new model.User(req.session.user)
                     .can(new model.Board({slug: escape(req.params.board)}), 1)
-                    .accept(function() {
+                    .accept(function(rights) {
                         new model.Stack({parent:{slug: escape(req.params.board)}})
                             .get(escape(req.params.stack), function(err, stack) {
                                 if(!err && stack) {
-                                    res.render('stacks/item.jade', {locals: {stack: stack}})
+                                    res.render('stacks/item.jade', {locals: {stack: stack, rights: rights}})
                                 } else res.send(404)
                              })
                     })
@@ -241,11 +248,11 @@ var server = express.createServer(
             if(req.session.user) {
                 new model.User(req.session.user)
                     .can(new model.Board({slug: escape(req.params.board)}), 2)
-                    .accept(function() {
+                    .accept(function(rights) {
                         new model.Stack({parent: {slug: escape(req.params.board)}})
                             .get(escape(req.params.stack), function(err, stack) {
                                 if(!err && stack) {
-                                    res.render('stickies/form', {locals: {stack: stack}, layout: req.isXMLHttpRequest})
+                                    res.render('stickies/form', {locals: {stack: stack, rights: rights}, layout: req.isXMLHttpRequest})
                                 } else res.send(404)
                             })
                     })
@@ -372,7 +379,7 @@ var server = express.createServer(
             if(req.session.user) {
                 new model.User(req.session.user)
                     .can(new model.Board({slug: escape(req.params.board)}), 1)
-                    .accept(function() {
+                    .accept(function(rights) {
                         new model.Sticky({
                             parent: {
                                 slug: escape(req.params.stack),
@@ -382,7 +389,7 @@ var server = express.createServer(
                             }
                         }).get(escape(req.params.sticky), function(err, sticky) {
                             if(!err && sticky) {
-                                res.render('stickies/item', {locals: {sticky: sticky}, layout: false})
+                                res.render('stickies/item', {locals: {sticky: sticky}, layout: false, rights: rights})
                             } else res.send(404)
                         })
                     })
@@ -397,8 +404,8 @@ var server = express.createServer(
         app.del('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 1)
-                    .accept(function() {
+                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .accept(function(rights) {
                         new model.Board()
                             .get(escape(req.params.board), function(err, board) {
                                 if(err || !board) return res.send(404)
@@ -444,16 +451,12 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
     
     var stickyNew = function(sticky, rev) {
         if(sticky.parent.parent.slug == listen_board) {
-            jade.renderFile(__dirname + '/views/stickies/item.jade', {locals: {sticky: sticky}}, function(err, res) {
-                client.send({event: 'sticky:new', sticky: sticky.asData(), html: res, rev: rev})
-            })
+            client.send({event: 'sticky:new', sticky: sticky.asData(), rev: rev})
         }
     }
     var stickyUpdate = function(sticky, rev) {
         if(sticky.parent.parent.slug == listen_board) {
-            jade.renderFile(__dirname + '/views/stickies/item.jade', {locals: {sticky: sticky}}, function(err, res) {
-                client.send({event: 'sticky:update', sticky: sticky.asData(), html: res, rev: rev})
-            })
+            client.send({event: 'sticky:update', sticky: sticky.asData(), rev: rev})
         }
     }
 

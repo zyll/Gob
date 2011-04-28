@@ -1,9 +1,9 @@
-article.sticky('data-slug': sticky.slug)
+article.sticky('data-slug': sticky ? sticky.slug : '')
   header
-    h2.title #{sticky.title}
+    h2.title #{sticky ? sticky.title : ''}
     - if(rights >= 2)
-      a.editable(href: sticky.url())
+      a.editable(href: sticky ? sticky.url() : '')
   section
-    p.content #{sticky.content}
+    p.content #{sticky ? sticky.content : ''}
   footer
-    p.user #{sticky.user}
+    p.user #{sticky ? sticky.user : ''}

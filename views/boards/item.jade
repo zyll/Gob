@@ -5,7 +5,8 @@ section
     -each stack in board.stacks
       != partial('../stacks/item', {stack: stack, rights: rights})
 - if (board.stacks.length && rights >= 2)
-  section#tplSticky!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
+  section#tplStickyForm!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
+section#tplSticky!= partial('../stickies/item', {rights: rights, sticky: null})
 section.trash.stack
   ul
     li
@@ -17,4 +18,4 @@ aside
     - if (board.stacks.length && rights >= 2)
       li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
     li.disconnect#socketState
-    span!= partial('users/rights', {item_rights: rights})
+    li!= partial('users/rights', {item_rights: rights})
