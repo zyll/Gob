@@ -3,9 +3,11 @@
 */
 // Required system libraries
 var http    = require('http')
-  , jade = require('jade')
+  , jade    = require('jade')
   , express = require('express')
-  , io = require('socket.io')
+  , io      = require('socket.io')
+  , form    = require('connect-form')
+  , fs      = require('fs')
   
   , Model = require('./models/board')
   , EventEmitter = require('events').EventEmitter
@@ -21,6 +23,7 @@ var server = express.createServer(
     express.cookieParser(),
     express.session({secret: 'rhododendron'}),
     express.bodyParser(),
+    form({keepExtensions: true}),
     express.methodOverride(),
     express.router(function(app) {
 
@@ -56,16 +59,27 @@ var server = express.createServer(
          * @todo as another app.
          */
         app.post('/user', function(req, res, next) {
-            if(req.body.nick && req.body.password && req.body.confirm && req.body.password == req.body.confirm) {
-                var user = new model.User({
-                    nick: req.body.nick,
-                    password: req.body.password})
-                user.save(function(ret) {
-                    req.session.user = user
-                    res.redirect('/user')
-                })
-            } else res.render('user/form')
-        })
+            req.form.complete(function(err, fields, files) {
+                console.log(files)
+                if(fields.nick && fields.password && fields.confirm && fields.password == fields.confirm) {
+                        var user = new model.User({
+                            nick: fields.nick,
+                            password: fields.password})
+                        user.save(function(ret) {
+                            req.session.user = user
+                            if(files.avatar) {
+                                model.db.saveAttachment(res.id,
+                                                        res.rev,
+                                                        files.avatar.filename,
+                                                        files.avatar.mime,
+                                                        fs.createReadStream(files.avatar.path),
+                                                        function() { res.redirect('/user') }
+                                                       )
+                            } else res.redirect('/user')
+                        })
+                } else res.render('user/form')
+            });
+                    })
 
         app.get('/login', function(req, res, next) {
             res.render('user/login', {layout: false})
