@@ -3,6 +3,7 @@
     "express": "",
     "cradle": "",
     "futures": "",
+    "connect-form": "",
     "socket.io-connect": ""
   },
   "directories": {
