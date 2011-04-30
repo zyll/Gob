@@ -7,6 +7,8 @@ section
 - if (board.stacks.length && rights >= 2)
   section#tplStickyForm!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
 section#tplSticky!= partial('../stickies/item', {rights: rights, sticky: null})
+section.users
+  ul!= partial('users/all', {board: board})
 section.trash.stack
   ul
     li
