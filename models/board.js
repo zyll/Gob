@@ -439,7 +439,7 @@ Model.Board.prototype.knownBy = function(nick, cb) {
     var self = this
     this.model.db.view('boards/by_nick', {key: nick}, function(err, res) {
         if(err || res.length == 0) {
-            cb(err, res)
+            cb(err, [])
         } else {
             cb(err, res.map(function(board) {
                 return new self.model.Board(board)
