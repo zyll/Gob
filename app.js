@@ -8,24 +8,25 @@ var http    = require('http')
   , io      = require('socket.io')
   , form    = require('connect-form')
   , fs      = require('fs')
-  
+  , im      = require('imagemagick') 
+
   , Model = require('./models/board')
   , EventEmitter = require('events').EventEmitter
 
-    require("socket.io-connect"); // ???
+    require("socket.io-connect") // ???
 
 var model = new Model({name: 'dev_boards'})
   , event = new EventEmitter()
 
 var server = express.createServer(
-    express.static(__dirname + '/public'),
-    express.logger(),
-    express.cookieParser(),
-    express.session({secret: 'rhododendron'}),
-    express.bodyParser(),
-    form({keepExtensions: true}),
-    express.methodOverride(),
-    express.router(function(app) {
+    express.static(__dirname + '/public')
+  , express.logger()
+  , express.cookieParser()
+  , express.session({secret: 'rhododendron'})
+  , express.bodyParser()
+  , form({keepExtensions: true})
+  , express.methodOverride()
+  , express.router(function(app) {
 
        /**
         * Home
@@ -60,30 +61,30 @@ var server = express.createServer(
          */
         app.post('/user', function(req, res, next) {
             req.form.complete(function(err, fields, files) {
-                console.log(files)
                 if(fields.nick && fields.password && fields.confirm && fields.password == fields.confirm) {
                         var user = new model.User({
-                            nick: fields.nick,
-                            password: fields.password})
+                            nick: fields.nick
+                          , password: fields.password})
                         user.save(function(ret) {
                             req.session.user = user
+                            res.redirect('/user')
                             if(files.avatar) {
-                                model.db.saveAttachment(res.id,
-                                                        res.rev,
-                                                        files.avatar.filename,
-                                                        files.avatar.mime,
-                                                        fs.createReadStream(files.avatar.path),
-                                                        function() { res.redirect('/user') }
-                                                       )
-                            } else res.redirect('/user')
-                        })
+                                im.resize({
+                                    srcPath: files.avatar.path
+                                  , format: 'png'
+                                  , width:  64
+                                  , dstPath: __dirname + '/public/avatar/'+ user.nick +'.png'
+                                    }, function(err, stdout, stderr) {})
+                                }
+                            })
                 } else res.render('user/form')
-            });
-                    })
+            })
+        })
 
         app.get('/login', function(req, res, next) {
             res.render('user/login', {layout: false})
         })
+
         app.post('/login', function(req, res, next) {
             if(req.body.nick) {
                 new model.User()
@@ -95,6 +96,7 @@ var server = express.createServer(
                 })
             } else res.render('user/login')
         })
+
         app.get('/logout', function(req, res, next) {
             req.session.destroy()
             res.redirect('/')
@@ -157,7 +159,7 @@ var server = express.createServer(
                     .accept(function(rights) {
                         new model.Board().get(escape(req.params.board), function(err, board) {
                             if(!err && board) {
-                                res.render('boards/users/edit.jade', {locals: {board: board, rights: rights, user: user}})
+                                res.render('boards/users/edit', {locals: {board: board, rights: rights, user: user}})
                             } else res.send(404)
                         })
                     })
@@ -187,7 +189,6 @@ var server = express.createServer(
             } else res.send(401)
         })
 
-    
         /**
          * Get form to create a Stack
          * @return 404 Not found, board doesn't exist.
@@ -449,15 +450,15 @@ var server = express.createServer(
         })
     }) 
 )
-server.set('view engine', 'jade');
+server.set('view engine', 'jade')
 
 model.createDB(function(err, res) {
-    server.listen(3000);
+    server.listen(3000)
     console.log('up and ready on http://localhost:3000')
 })
 
 
-var socket = io.listen(server);
+var socket = io.listen(server)
 socket.on('connection', socket.prefixWithMiddleware( function (client, req, res) {
 
     var listen_board = null,
@@ -503,7 +504,7 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
             event.on('sticky:move', stickyMove)
             event.on('sticky:remove', stickyRemove)
         }
-    });
+    })
 
     client.on('disconnect', function(){
         var listen_board = null
@@ -511,6 +512,5 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         event.removeListener('sticky:update', stickyUpdate)
         event.removeListener('sticky:move', stickyMove)
         event.removeListener('sticky:remove', stickyRemove)
-    });
-}));
-
+    })
+}))

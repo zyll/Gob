@@ -1,5 +1,8 @@
 header: p User info
 section
-  h3 Name : #{user.nick}
-  h3 Boards
-  div!= partial('../boards/all', {boards: boards, user: user})
+  div
+    img(src: '/avatar/' + user.nick + '.png')
+    span #{user.nick}
+  div
+    p Boards
+    p!= partial('../boards/all', {boards: boards, user: user})

@@ -2,4 +2,6 @@
 ul
   - each rights, user in board.allow.users
     li #{user}: #{rightsLevels[rights]}
+      img(src: '/avatar/' + user + '.png')
       ul!= partial('rights', {item_rights: rights})
+

@@ -4,7 +4,8 @@
     "cradle": "",
     "futures": "",
     "connect-form": "",
-    "socket.io-connect": ""
+    "socket.io-connect": "",
+    "imagemagick": ""
   },
   "directories": {
     "data": "./boards",
