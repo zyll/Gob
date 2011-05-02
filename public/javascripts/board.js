@@ -227,6 +227,12 @@ $(document).ready( function() {
                     }
                 });
             });
+            $('.sortableUser').sortable({revert: true});
+            $('li.user').draggable({
+                connectToSortable: $('.sortableUser'),
+                helper: 'clone',
+                revert: 'invalid'
+            });
         }
  
         var socket = new io.Socket();

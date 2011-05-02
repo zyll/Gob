@@ -4,6 +4,10 @@ article.sticky('data-slug': sticky ? sticky.slug : '')
     - if(rights >= 2)
       a.editable(href: sticky ? sticky.url() : '')
   section
-    p.content #{sticky ? sticky.content : ''}
+    div
+      p.content #{sticky ? sticky.content : ''}
   footer
-    p.user #{sticky ? sticky.user : ''}
+    div
+      p.user #{sticky ? sticky.user : ''}
+      ul.sortableUser
+        li
