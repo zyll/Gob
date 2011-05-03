@@ -46,7 +46,7 @@ Board.prototype.connectStack = function() {
                         "move"].join('/'),
                     data: {to: to.slug, at: pos},
                     type: 'post'
-                })
+                });
                 sticky.stack.removeSticky(sticky);
                 // todo : use pos here
                 sticky.stack = to;
@@ -141,14 +141,27 @@ Stack.prototype.append = function(el, at) {
 }
 
 function Ticket(element, stack) {
+    var self = this;
     this.stack = stack;
     this.element = element;
     this.setContent(element);
     $(this.element).find('.sortableUser').sortable({
         revert: true,
         receive: function(event, ui) {
-            console.log(this)
-            console.log(ui)
+            var user = ui.item.find('img').attr('title');
+            if($.inArray(user, self.user) >= 0) {
+                $(self.element).remove(ui.item);
+            } else {
+                self.user.push(user);
+                $.ajax({
+                    url: ["/board", self.stack.board.name,
+                        "stack", self.stack.slug,
+                        "sticky", self.slug,
+                        "user"].join('/'),
+                    data: {user: user},
+                    type: 'post'
+                })
+            }
         }
     });
 }
@@ -207,7 +220,10 @@ Ticket.prototype.setContent = function(element) {
                 })
             }
         });
-    })
+    });
+    this.user = $(this.element).find('li.user img').map(function() {
+        return $(this).attr('title');
+    });
 }
 
 function UserList(element) {

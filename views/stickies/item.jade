@@ -9,4 +9,4 @@ article.sticky('data-slug': sticky ? sticky.slug : '')
   footer
     div.user
       span user
-      ul.sortableUser!= partial('../boards/users/gallery', {users: sticky ? sticky.user : []})
+      ul.sortableUser!= partial('../boards/users/gallery', {users: sticky ? sticky.user : {}})

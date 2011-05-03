@@ -347,6 +347,38 @@ var server = express.createServer(
         })
 
         /**
+         * add a user to a sticky .
+         * @return 302 Redirect, on done, content-location headers point to the new sticky.
+         * @return 404 Not found, sticky doesn't exist.
+         * @return 500 On fail to save.
+         */
+        app.post('/board/:board/stack/:stack/sticky/:sticky/user', function(req, res, next) {
+            if(req.session.user) {
+                new model.User(req.session.user)
+                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .accept(function() {
+                        new model.Board()
+                            .get(escape(req.params.board), function(err, board) {
+                            if(!err && board) {
+                                var stack = board.stacksGet(escape(req.params.stack))
+                                if(!stack) return res.send(404)
+                                var sticky = stack.stickiesGet(escape(req.params.sticky))
+                                if(!sticky)return res.send(404)
+                                //fixme hack to map as in board.users.allow for gallery tpl
+                                sticky.user[req.body.user] = 0
+                                board.save(function(err, board) {
+                                    if(err) return res.send(500)
+                                    event.emit('user:update', sticky, board.rev)
+                                    res.redirect(sticky.url())
+                                })
+                            } else res.send(404)
+                        })
+                    })
+                    .refuse(function() { res.send(401 )})
+            } else res.send(401)
+        })
+
+        /**
          * move a sticky to a stack
          */
         app.post('/board/:board/stack/:stack/sticky/:sticky/move', function(req, res, next) {
