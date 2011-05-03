@@ -7,7 +7,6 @@ article.sticky('data-slug': sticky ? sticky.slug : '')
     div
       p.content #{sticky ? sticky.content : ''}
   footer
-    div
-      p.user #{sticky ? sticky.user : ''}
-      ul.sortableUser
-        li
+    div.user
+      span user
+      ul.sortableUser!= partial('../boards/users/gallery', {users: sticky ? sticky.user : []})

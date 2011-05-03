@@ -69,9 +69,9 @@ li.rights.write { background-image: url(/images/write.png); }
 li.rights.admin { background-image: url(/images/admin.png); }
 li.rights img{ width: 30px; height: 30px; }
 
-article footer div { display: inline-block; min-width: 100%; min-height: 20px; border: 1px red solid; max-height: 30px; overflow: visible;}
-article footer div ul div { display: inline-block; } 
-article footer div ul li{ display: inline-block;max-height: 68px; overflow: visible; }
+article footer div.user { display: inline-block; width: 100%; overflow: visible;}
+article footer div.user ul{ display: inline-block; } 
+article footer div.user ul{ display: inline-block; width: 192px; overflow: visible; height: 34px;  background-color: #ddd;}
 li.user {display: inline;}
 li.user ul {display: inline;}
 li.user ul li {display: inline;}

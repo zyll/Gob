@@ -56,6 +56,16 @@ Board.prototype.connectStack = function() {
     });
 }
 
+Board.prototype.userList = function(userList) {
+    this.userList = userList;
+    this.refreshAcceptUsers();
+}
+
+Board.prototype.refreshAcceptUsers = function() {
+    console.log(this)
+    this.userList.dragabbleTo($(this.element).find('.sortableUser'));
+}
+
 Board.prototype.addStack = function(stack) {
     this.stacks.push(stack);
 }
@@ -127,18 +137,26 @@ Stack.prototype.append = function(el, at) {
         var element = this.holder.find('li:last')[0];
         this.add($(el).appendTo(element).attr('id', null));
     }
+    this.board.refreshAcceptUsers();
 }
 
 function Ticket(element, stack) {
     this.stack = stack;
     this.element = element;
     this.setContent(element);
+    $(this.element).find('.sortableUser').sortable({
+        revert: true,
+        receive: function(event, ui) {
+            console.log(this)
+            console.log(ui)
+        }
+    });
 }
 
 Ticket.fromTpl = function(sticky) {
     var tpl = $('#tplSticky article').clone();
     tpl.data('slug', sticky.slug);
-    $.each(['title', 'content', 'user'], function(i, item) {
+    $.each(['title', 'content'], function(i, item) {
         tpl.find('.' + item).html(sticky[item]);
     })
     return tpl;
@@ -147,7 +165,7 @@ Ticket.fromTpl = function(sticky) {
 
 Ticket.prototype.update = function(sticky) {
     var self = this;
-    $.each(['title', 'content', 'user'], function(i, item) {
+    $.each(['title', 'content'], function(i, item) {
         $(self.element).find('.' + item).html(sticky[item]);
     })
     this.setContent(this.element);
@@ -184,13 +202,29 @@ Ticket.prototype.setContent = function(element) {
             open: function() {
                 var form = $(self.element).find('form')
                 var that = this;
-                $.each(['title', 'content', 'user'], function(i, item) {
+                $.each(['title', 'content'], function(i, item) {
                     $(that).find('*[name="' + item + '"]').val($(self.element).find('.' + item).text());
                 })
             }
         });
     })
 }
+
+function UserList(element) {
+    var self = this;
+    this.element = element;
+    this.users_elements = $(this.element).find(' li.user');
+}
+
+
+UserList.prototype.dragabbleTo = function(element) {
+    $(this.users_elements).draggable({
+        connectToSortable: $(element),
+        helper: 'clone',
+        revert: 'invalid',
+    });
+}
+//    var name = $(element).find('img').attr('title');
 
 $(document).ready( function() {
     $('.board').each(function() {
@@ -227,14 +261,10 @@ $(document).ready( function() {
                     }
                 });
             });
-            $('.sortableUser').sortable({revert: true});
-            $('li.user').draggable({
-                connectToSortable: $('.sortableUser'),
-                helper: 'clone',
-                revert: 'invalid'
-            });
+            
+            board.userList(new UserList($('section.users')))
         }
- 
+
         var socket = new io.Socket();
         socket.connect();
         socket.on('connect', function() {
