@@ -57,13 +57,14 @@ Board.prototype.connectStack = function() {
 }
 
 Board.prototype.userList = function(userList) {
-    this.userList = userList;
+    this.user_list = userList;
     this.refreshAcceptUsers();
 }
 
 Board.prototype.refreshAcceptUsers = function() {
     console.log(this)
-    this.userList.dragabbleTo($(this.element).find('.sortableUser'));
+    this.user_list.dragabbleTo('ul.sortableUser');
+    //this.userList.dragabbleTo($(this.element).find('.sortableUser'));
 }
 
 Board.prototype.addStack = function(stack) {
@@ -145,6 +146,9 @@ function Ticket(element, stack) {
     this.stack = stack;
     this.element = element;
     this.setContent(element);
+    // fucking bug avoid to set as a sortable when there's already a user in the zone.
+    // so removing them all before.
+    var clean_me = $(this.element).find('.sortableUser li.user').remove();
     $(this.element).find('.sortableUser').sortable({
         revert: true,
         receive: function(event, ui) {
@@ -164,6 +168,8 @@ function Ticket(element, stack) {
             }
         }
     });
+    //then restoring the users...
+    $(this.element).find('.sortableUser').append(clean_me);
 }
 
 Ticket.fromTpl = function(sticky) {
@@ -229,18 +235,17 @@ Ticket.prototype.setContent = function(element) {
 function UserList(element) {
     var self = this;
     this.element = element;
-    this.users_elements = $(this.element).find(' li.user');
+    this.users_elements = $(this.element).find('li.user');
 }
 
 
 UserList.prototype.dragabbleTo = function(element) {
     $(this.users_elements).draggable({
-        connectToSortable: $(element),
+        connectToSortable: element,
         helper: 'clone',
-        revert: 'invalid',
+        revert: 'invalid'
     });
 }
-//    var name = $(element).find('img').attr('title');
 
 $(document).ready( function() {
     $('.board').each(function() {
@@ -278,7 +283,7 @@ $(document).ready( function() {
                 });
             });
             
-            board.userList(new UserList($('section.users')))
+            board.userList(new UserList($('section.users')));
         }
 
         var socket = new io.Socket();
