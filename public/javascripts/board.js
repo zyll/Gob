@@ -21,6 +21,7 @@ Board.prototype.connectStack = function() {
     this.inMove = null;
     $(res).sortable({
         connectWith: res,
+        cursorAt: {top: 5, left: 5},
         remove: function(event, ui) {
             var stack = self.getStack($(this).data('slug'));
             var sticky = stack.getSticky($(ui.item).find('article.sticky').data('slug'));
@@ -62,9 +63,7 @@ Board.prototype.userList = function(userList) {
 }
 
 Board.prototype.refreshAcceptUsers = function() {
-    console.log(this)
     this.user_list.dragabbleTo('ul.sortableUser');
-    //this.userList.dragabbleTo($(this.element).find('.sortableUser'));
 }
 
 Board.prototype.addStack = function(stack) {
@@ -151,6 +150,7 @@ function Ticket(element, stack) {
     var clean_me = $(this.element).find('.sortableUser li.user').remove();
     $(this.element).find('.sortableUser').sortable({
         revert: true,
+        cursorAt: 'top left',
         receive: function(event, ui) {
             var user = ui.item.find('img').attr('title');
             if($.inArray(user, self.user) >= 0) {
@@ -241,6 +241,7 @@ function UserList(element) {
 UserList.prototype.dragabbleTo = function(element) {
     $(this.users_elements).draggable({
         connectToSortable: element,
+        cursorAt: {top: 5, left: 5},
         helper: 'clone',
         revert: 'invalid'
     });
@@ -330,7 +331,6 @@ $(document).ready( function() {
                 }
                 board.rev = msg.rev; // updating board current rev.
             } else {
-                 console.log('from us');
             }
         });
 
