@@ -146,7 +146,7 @@ function Ticket(element, stack) {
     this.stack = stack;
     this.element = element;
     this.setContent(element);
-    // fucking bug avoid to set as a sortable when there's already a user in the zone.
+    // something avoid to set as a sortable when there's already a user in the zone.
     // so removing them all before.
     var clean_me = $(this.element).find('.sortableUser li.user').remove();
     $(this.element).find('.sortableUser').sortable({
@@ -154,7 +154,7 @@ function Ticket(element, stack) {
         receive: function(event, ui) {
             var user = ui.item.find('img').attr('title');
             if($.inArray(user, self.user) >= 0) {
-                $(self.element).remove(ui.item);
+                $($(this).find('img[title="'+user+'"]')[1]).remove();
             } else {
                 self.user.push(user);
                 $.ajax({
@@ -180,7 +180,6 @@ Ticket.fromTpl = function(sticky) {
     })
     return tpl;
 }
-
 
 Ticket.prototype.update = function(sticky) {
     var self = this;
