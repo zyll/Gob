@@ -368,7 +368,7 @@ var server = express.createServer(
                                 sticky.user[req.body.user] = 0
                                 board.save(function(err, board) {
                                     if(err) return res.send(500)
-                                    event.emit('user:update', sticky, board.rev)
+                                    event.emit('sticky:user:add', sticky, req.body.user, board.rev)
                                     res.redirect(sticky.url())
                                 })
                             } else res.send(404)
@@ -518,7 +518,12 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
             client.send({event: 'sticky:remove', sticky: sticky, rev: rev})
         }
     }
-
+    var stickyUserAdd = function(sticky, user, rev) {
+        if(sticky.parent.parent.slug == listen_board) {
+            client.send({event: 'sticky:user:add', sticky: sticky.asData(), user: user, rev: rev})
+        }
+    }
+    // sticky:user:add
     client.on('message', function(message){
         // client can change the listenned board.
         if(message.board && listen_board != message.board) {
@@ -528,6 +533,7 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
                 event.removeListener('sticky:update', stickyUpdate)
                 event.removeListener('sticky:move', stickyMove)
                 event.removeListener('sticky:remove', stickyRemove)
+                event.removeListener('sticky:user:add', stickyUserAdd)
             }
             listen_board = message.board
             
@@ -535,6 +541,7 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
             event.on('sticky:update', stickyUpdate)
             event.on('sticky:move', stickyMove)
             event.on('sticky:remove', stickyRemove)
+            event.on('sticky:user:add', stickyUserAdd)
         }
     })
 
@@ -544,5 +551,6 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         event.removeListener('sticky:update', stickyUpdate)
         event.removeListener('sticky:move', stickyMove)
         event.removeListener('sticky:remove', stickyRemove)
+        event.removeListener('sticky:user:add', stickyUserAdd)
     })
 }))

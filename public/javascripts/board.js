@@ -319,11 +319,18 @@ $(document).ready( function() {
                             sticky.remove();
                         }
                         break;
+                    case 'sticky:user:add':
+                        var from = board.getStack(msg.sticky.parent.slug);
+                        var sticky = from.getSticky(msg.sticky.slug);
+                        if($.inArray(msg.user, sticky.user) < 0) {
+                            $(sticky.element).find('.sortableUser').append('<li class="user"><img src="/avatar/'+msg.user+'.png" title="'+msg.user+'"/></li>')
+                            sticky.user.push(msg.user);
+                        }
+                        break;
                 }
                 board.rev = msg.rev; // updating board current rev.
-            } else { // should not happen
-                // todo : throw ?
-                // console.log('board rev should not match: actual = ' , board.rev , ' ,  message = ', msg.rev)
+            } else {
+                 console.log('from us');
             }
         });
 
