@@ -15,7 +15,9 @@ var http    = require('http')
 
     require("socket.io-connect") // ???
 
-var model = new Model({name: 'dev_boards'})
+var config = require('./config')
+
+var model = new Model({name: config.db.name})
   , event = new EventEmitter()
 
 var server = express.createServer(
@@ -485,8 +487,8 @@ var server = express.createServer(
 server.set('view engine', 'jade')
 
 model.createDB(function(err, res) {
-    server.listen(3000)
-    console.log('up and ready on http://localhost:3000')
+    server.listen(config.server.port, config.server.host)
+    console.log('up and ready on http://'+config.server.host+':'+config.server.port)
 })
 
 
@@ -518,12 +520,13 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
             client.send({event: 'sticky:remove', sticky: sticky, rev: rev})
         }
     }
+
     var stickyUserAdd = function(sticky, user, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:user:add', sticky: sticky.asData(), user: user, rev: rev})
         }
     }
-    // sticky:user:add
+
     client.on('message', function(message){
         // client can change the listenned board.
         if(message.board && listen_board != message.board) {
