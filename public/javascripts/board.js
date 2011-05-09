@@ -145,17 +145,14 @@ function Ticket(element, stack) {
     this.stack = stack;
     this.element = element;
     this.setContent(element);
-    // something avoid to set as a sortable when there's already a user in the zone.
-    // so removing them all before.
-    var clean_me = $(this.element).find('.sortableUser li.user').remove();
-    $(this.element).find('.sortableUser').sortable({
-        revert: true,
-        cursorAt: 'top left',
-        receive: function(event, ui) {
-            var user = ui.item.find('img').attr('title');
+    $(this.element).find('.sortableUser').droppable({
+        tolerance: 'pointer',
+        drop: function(event, ui) {
+            var user = ui.draggable.find('img').attr('title');
             if($.inArray(user, self.user) >= 0) {
                 $($(this).find('img[title="'+user+'"]')[1]).remove();
             } else {
+                $(this).append(ui.draggable.clone());
                 self.user.push(user);
                 $.ajax({
                     url: ["/board", self.stack.board.name,
@@ -169,7 +166,6 @@ function Ticket(element, stack) {
         }
     });
     //then restoring the users...
-    $(this.element).find('.sortableUser').append(clean_me);
 }
 
 Ticket.fromTpl = function(sticky) {
@@ -240,7 +236,6 @@ function UserList(element) {
 
 UserList.prototype.dragabbleTo = function(element) {
     $(this.users_elements).draggable({
-        connectToSortable: element,
         cursorAt: {top: 5, left: 5},
         helper: 'clone',
         revert: 'invalid'
