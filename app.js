@@ -419,6 +419,35 @@ var server = express.createServer(
                     .refuse(function() { res.send(401 )})
             } else res.send(401)
         })
+
+        /**
+         * remove auser from the sticky.
+         */
+        app.del('/board/:board/stack/:stack/sticky/:sticky/user/:user', function(req, res, next) {
+            if(req.session.user) {
+                new model.User(req.session.user)
+                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .accept(function(rights) {
+                        new model.Board()
+                            .get(escape(req.params.board), function(err, board) {
+                                if(err || !board) return res.send(404)
+                                var stack = board.stacksGet(escape(req.params.stack))
+                                if(!stack) return res.send(404)
+                                var sticky = stack.stickiesGet(escape(req.params.sticky))
+                                if(!sticky) return res.send(404)
+                                if(!sticky.user[escape(req.params.user)] && sticky.user[escape(req.params.user)] != 0) {
+                                    return res.send(404)
+                                }
+                                delete sticky.user[escape(req.params.user)]
+                                board.save(function(err) {
+                                    res.send(204)
+                                    event.emit('sticky:user:remove', sticky, escape(req.params.user), board.rev)
+                                })
+                            })
+                     })
+                    .refuse(function() { res.send(401) })
+            } else res.send(401)
+        })
         
         /**
          * Getting a sticky by it's slug
@@ -462,11 +491,10 @@ var server = express.createServer(
                                 if(!stack) return res.send(404)
                                 var sticky = stack.stickiesGet(escape(req.params.sticky))
                                 if(!sticky) return res.send(404)
-                                var data = sticky.asData()
                                 stack.stickiesRemove(sticky)
                                 board.save(function(err) {
                                     res.send(204)
-                                    event.emit('sticky:remove', data, board.rev)
+                                    event.emit('sticky:remove', sticky, board.rev)
                                 })
                             })
                      })
@@ -527,6 +555,12 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         }
     }
 
+    var stickyUserRemove = function(sticky, user, rev) {
+        if(sticky.parent.parent.slug == listen_board) {
+            client.send({event: 'sticky:user:remove', sticky: sticky.asData(), user: user, rev: rev})
+        }
+    }
+
     client.on('message', function(message){
         // client can change the listenned board.
         if(message.board && listen_board != message.board) {
@@ -537,6 +571,7 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
                 event.removeListener('sticky:move', stickyMove)
                 event.removeListener('sticky:remove', stickyRemove)
                 event.removeListener('sticky:user:add', stickyUserAdd)
+                event.removeListener('sticky:user:remove', stickyUserRemove)
             }
             listen_board = message.board
             
@@ -545,6 +580,7 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
             event.on('sticky:move', stickyMove)
             event.on('sticky:remove', stickyRemove)
             event.on('sticky:user:add', stickyUserAdd)
+            event.on('sticky:user:remove', stickyUserRemove)
         }
     })
 
@@ -555,5 +591,6 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         event.removeListener('sticky:move', stickyMove)
         event.removeListener('sticky:remove', stickyRemove)
         event.removeListener('sticky:user:add', stickyUserAdd)
+        event.removeListener('sticky:user:remove', stickyUserRemove)
     })
 }))

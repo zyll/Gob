@@ -152,7 +152,13 @@ function Ticket(element, stack) {
             if($.inArray(user, self.user) >= 0) {
                 $($(this).find('img[title="'+user+'"]')[1]).remove();
             } else {
-                $(this).append(ui.draggable.clone());
+                var user_element = ui.draggable.clone();
+                user_element.append('<a href="#remove">X</a>');
+                user_element.find('a').bind('click', function(event) {
+                    event.preventDefault();
+                    self.removeUser(user);
+                }); 
+                $(this).append(user_element);
                 self.user.push(user);
                 $.ajax({
                     url: ["/board", self.stack.board.name,
@@ -165,7 +171,18 @@ function Ticket(element, stack) {
             }
         }
     });
-    //then restoring the users...
+}
+
+Ticket.prototype.removeUser = function(user) {
+    console.log(this);
+    $.ajax({
+        url: ["/board", this.stack.board.name,
+            "stack", this.stack.slug,
+            "sticky", this.slug,
+            "user", user].join('/'),
+            data: {'_method': 'DELETE'},
+            type: 'post'
+    });
 }
 
 Ticket.fromTpl = function(sticky) {
@@ -223,7 +240,12 @@ Ticket.prototype.setContent = function(element) {
         });
     });
     this.user = $(this.element).find('li.user img').map(function() {
-        return $(this).attr('title');
+        var user = $(this).attr('title');
+        $(this).parent().find('a').bind('click', function(event) {
+            event.preventDefault();
+            self.removeUser(user);
+        })
+        return user;
     });
 }
 
@@ -323,7 +345,16 @@ $(document).ready( function() {
                             sticky.user.push(msg.user);
                         }
                         break;
-                }
+                    case 'sticky:user:remove':
+                        console.log('sticky user remove');
+                        var from = board.getStack(msg.sticky.parent.slug);
+                        var sticky = from.getSticky(msg.sticky.slug);
+                        if($.inArray(msg.user, sticky.user) >= 0) {
+                            $(sticky.element).find('.sortableUser').find('li img[title="'+msg.user+'"]').parent().remove();
+                            sticky.user.splice($.inArray(sticky.user[msg.user]), 1);
+                        }
+                        break;
+}
                 board.rev = msg.rev; // updating board current rev.
             } else {
             }
