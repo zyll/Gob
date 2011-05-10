@@ -9,7 +9,7 @@ var http    = require('http')
   , form    = require('connect-form')
   , fs      = require('fs')
   , im      = require('imagemagick') 
-
+  , FileStore = require('./models/file-session')
   , Model = require('./models/board')
   , EventEmitter = require('events').EventEmitter
 
@@ -24,7 +24,7 @@ var server = express.createServer(
     express.static(__dirname + '/public')
   , express.logger()
   , express.cookieParser()
-  , express.session({secret: 'rhododendron'})
+  , express.session({secret: 'rhododendron', store: new FileStore({storeFilename: '/tmp/boardSessionStore.json'})})
   , express.bodyParser()
   , form({keepExtensions: true})
   , express.methodOverride()
@@ -353,6 +353,7 @@ var server = express.createServer(
          * @return 302 Redirect, on done, content-location headers point to the new sticky.
          * @return 404 Not found, sticky doesn't exist.
          * @return 500 On fail to save.
+         * @todo validate params.
          */
         app.post('/board/:board/stack/:stack/sticky/:sticky/user', function(req, res, next) {
             if(req.session.user) {
