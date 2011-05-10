@@ -28,13 +28,20 @@ body > section:first-of-type { width: 90%; min-height: 450px; margin: 0 auto; pa
 
 
 /* Stickies */
-article { width: 164px; margin: 0 0 0 50px; padding: 8px 8px 30px 8px; background: #f4cd37 url('/images/background_sticky.png') right bottom no-repeat; }
+article { width: 144px; min-height: 120px; margin: 0 0 0 50px; padding: 8px 28px 30px 8px; background: #f4cd37 url('/images/background_sticky.png') right bottom no-repeat; }
 article header { position: relative; background: url('/images/dotted.png') 0 bottom repeat-x; }
 article header h2 { font: bold 17px/25px Arial; color: #000; }
 article header .editable { position: absolute; bottom: -30px; left: -38px; width: 20px; height: 20px; padding: 5px; background: #000 url('/images/edit.png') center no-repeat; }
-article section { padding: 5px 0; font: normal 14px Arial; color: #000; }
-article section .user { height: 20px; border: 2px solid red; }
-article section .user ul { display: inline-block; width: 192px; overflow: visible; height: 34px;  background-color: #ddd;}
+article section { position: relative; padding: 5px 0; font: normal 14px Arial; color: #000; }
+article section > .user { position: absolute; right: -40px; top: -33px; height: 150px; width: 20px; }
+article section .user ul { display: inline-block; width: 20px; height: 150px; overflow: visible; background: transparent; }
+article section .user ul li { position: relative; width: 48px; height: 52px; margin: 0 0 0 -12px; }
+article section .user ul li:after { position: absolute; top: -40px; left: 20px; content: ' '; width: 7px; height: 7px; background: url('/images/epingle.png') center no-repeat; }
+article section .user ul li img { width: 40px; height: 40px; border: 4px solid #FFF; border-bottom: 8px solid #FFF; }
+article section .user ul li:nth-child(n) { transform: rotate(6deg); -webkit-transform: rotate(6deg); -moz-transform: rotate(6deg); }
+article section .user ul li:nth-child(2n) { transform: rotate(-6deg); -webkit-transform: rotate(-6deg); -moz-transform: rotate(-6deg); }
+article section .user ul li a { display: none; }
+article section .user ul li:hover a { display: block; position: absolute; top: -40px; right: 0; padding: 0 3px; background: #000; font: bold 12px Arial; color: #FFF; }
 
 /* tools */
 aside { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: rgba(0, 0, 0, 0.7); }
@@ -44,7 +51,7 @@ aside ul li { display: inline; }
 
 
 body > section ul.board { display: block; width: 100%; margin: 0 auto; }
-body > section ul.board > li { display: inline-block; width: 32.5%; min-height: 480px; vertical-align: top; background: url('/images/separator.png') right 0 repeat-y; }
+body > section ul.board > li { display: inline-block; width: 300px; min-height: 480px; vertical-align: top; background: url('/images/separator.png') right 0 repeat-y; }
 body > section ul.board > li:last-child { background: none; }
 body > section ul.board li h1 { text-align: center; font: normal 25px 'Lobster', Arial; color: #000; }
 body > section ul.board li.stack ul.stickyContainer { padding: 40px 0 70px 0; }
@@ -74,9 +81,6 @@ li.rights.write { background-image: url(/images/write.png); }
 li.rights.admin { background-image: url(/images/admin.png); }
 li.rights img{ width: 30px; height: 30px; }
 
-article footer div.user { display: inline-block; width: 100%; overflow: visible;}
-article footer div.user ul{ display: inline-block; } 
-article footer div.user ul{ display: inline-block; width: 192px; overflow: visible; height: 34px;  background-color: #ddd;}
 li.user {display: inline;}
 li.user ul {display: inline;}
 li.user ul li {display: inline;}
