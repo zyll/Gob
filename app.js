@@ -491,10 +491,11 @@ var server = express.createServer(
                                 if(!stack) return res.send(404)
                                 var sticky = stack.stickiesGet(escape(req.params.sticky))
                                 if(!sticky) return res.send(404)
+                                var data  = sticky.asData()
                                 stack.stickiesRemove(sticky)
                                 board.save(function(err) {
                                     res.send(204)
-                                    event.emit('sticky:remove', sticky, board.rev)
+                                    event.emit('sticky:remove', data, board.rev)
                                 })
                             })
                      })
