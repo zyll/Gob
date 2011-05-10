@@ -4,9 +4,7 @@ article.sticky('data-slug': sticky ? sticky.slug : '')
     - if(rights >= 2)
       a.editable(href: sticky ? sticky.url() : '')
   section
-    div
-      p.content #{sticky ? sticky.content : ''}
-  footer
+    p.content #{sticky ? sticky.content : ''}
     div.user
-      span user
       ul.sortableUser!= partial('../boards/stickies/users/gallery', {rights: rights, users: sticky ? sticky.user : {}})
+

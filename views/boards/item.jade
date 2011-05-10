@@ -1,5 +1,6 @@
 header
-  p ScrumBoard : #{board.name}
+  p: a(href:'/') Get on Board
+  p #{board.name}
 section
   ul.board('data-slug': board.slug, 'data-rev': board.rev, 'data-rights': rights)
     -each stack in board.stacks
