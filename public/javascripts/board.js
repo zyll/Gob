@@ -145,8 +145,9 @@ function Ticket(element, stack) {
     this.stack = stack;
     this.element = element;
     this.setContent(element);
-    $(this.element).find('.sortableUser').droppable({
+    $(this.element).droppable({
         tolerance: 'pointer',
+        accept: 'li.user',
         drop: function(event, ui) {
             var user = ui.draggable.find('img').attr('title');
             if($.inArray(user, self.user) >= 0) {
@@ -158,7 +159,7 @@ function Ticket(element, stack) {
                     event.preventDefault();
                     self.removeUser(user);
                 }); 
-                $(this).append(user_element);
+                $(this).find('.user .sortableUser').append(user_element);
                 self.user.push(user);
                 $.ajax({
                     url: ["/board", self.stack.board.name,
