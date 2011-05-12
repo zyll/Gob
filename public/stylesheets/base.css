@@ -21,6 +21,9 @@ body > header p:first-of-type { float: left; width: 237px; height: 56px; }
 body > header p:first-of-type a { position: absolute; top: -8px; left: 27px; z-index: 10000; width: 206px; height: 116px; background: url('/images/get_on_board.png') 0 0 no-repeat; text-indent: -3000px; }
 body > header p:nth-of-type(2) { float: left; font: bold 21px/57px Arial; color: #f4cd37; }
 body > header p:nth-of-type(2):before { content: '> '; color: #FFF; }
+body > header ul.actions{ float: right;}
+body > header ul.actions li{ float: right; font: bold 21px/57px Arial; color: #f4cd37; padding: 0 27px;}
+body > header ul.actions li form *{ height: inherit; width: inherit; padding : 0; float: none; line-height: 1em;}
 
 
 /* board */
@@ -42,7 +45,7 @@ article section .user ul li:nth-child(n) { transform: rotate(6deg); -webkit-tran
 article section .user ul li:nth-child(2n) { transform: rotate(-6deg); -webkit-transform: rotate(-6deg); -moz-transform: rotate(-6deg); }
 article section .user ul li a { display: none; }
 article section .user ul li:hover a { display: block; position: absolute; top: -40px; right: 0; padding: 0 3px; background: #000; font: bold 12px Arial; color: #FFF; }
-
+ne
 /* tools */
 aside { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: rgba(0, 0, 0, 0.7); }
 aside ul { text-align: center; }

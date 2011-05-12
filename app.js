@@ -84,7 +84,7 @@ var server = express.createServer(
         })
 
         app.get('/login', function(req, res, next) {
-            res.render('user/login', {layout: false})
+            res.render('user/login', {locals: {user : null}, layout: !req.isXMLHttpRequest})
         })
 
         app.post('/login', function(req, res, next) {

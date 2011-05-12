@@ -1,9 +1,8 @@
-header: p Login
-section
-  form(method: 'post')
-    fieldset
-      p: label nickname
-        input(type: 'text', name: 'nick')
-      p: label password
-        input(type: 'password', name: 'password')
-    button(type: 'submit') login
+form(action: '/login', method: 'post')
+  fieldset
+    legend Login
+    p: label nickname
+      input(type: 'text', name: 'nick')
+    p: label password
+      input(type: 'password', name: 'password')
+  button(type: 'submit') login
