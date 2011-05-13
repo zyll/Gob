@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "express": "",
+    "connect": "",
+    "jade": "",
     "cradle": "",
     "futures": "",
     "connect-form": "",

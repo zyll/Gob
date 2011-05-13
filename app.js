@@ -5,7 +5,7 @@
 var http    = require('http')
   , jade    = require('jade')
   , express = require('express')
-  , io      = require('socket.io')
+  , socketIO = require("socket.io-connect").socketIO
   , form    = require('connect-form')
   , fs      = require('fs')
   , im      = require('imagemagick') 
@@ -13,7 +13,6 @@ var http    = require('http')
   , Model = require('./models/board')
   , EventEmitter = require('events').EventEmitter
 
-    require("socket.io-connect") // ???
 
 var config = require('./config')
 
@@ -21,7 +20,8 @@ var model = new Model({name: config.db.name})
   , event = new EventEmitter()
 
 var server = express.createServer(
-    express.static(__dirname + '/public')
+    socketIO( function () { return server }, boardSocket)
+  , express.static(__dirname + '/public')
   , express.logger()
   , express.cookieParser()
   , express.session({secret: 'rhododendron', store: new FileStore({storeFilename: '/tmp/boardSessionStore.json'})})
@@ -522,8 +522,9 @@ model.createDB(function(err, res) {
 })
 
 
-var socket = io.listen(server)
-socket.on('connection', socket.prefixWithMiddleware( function (client, req, res) {
+function boardSocket(client, req, res) {
+
+    console.log('wooooooooooooooooooooooooot')
 
     var listen_board = null,
         listen_func = null
@@ -595,4 +596,4 @@ socket.on('connection', socket.prefixWithMiddleware( function (client, req, res)
         event.removeListener('sticky:user:add', stickyUserAdd)
         event.removeListener('sticky:user:remove', stickyUserRemove)
     })
-}))
+}
