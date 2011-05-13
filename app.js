@@ -335,7 +335,6 @@ var server = express.createServer(
                                 if(!sticky)return res.send(404)
                                 sticky.title = req.body.title
                                 sticky.content = req.body.content
-                                sticky.user = req.body.user
                                 board.save(function(err, board) {
                                     if(err) return res.send(500)
                                     event.emit('sticky:update', sticky, board.rev)
