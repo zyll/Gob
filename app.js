@@ -26,7 +26,7 @@ var server = express.createServer(
   , express.static(__dirname + '/public')
   , express.logger()
   , express.cookieParser()
-  , express.session({secret: 'rhododendron', store: new FileStore({storeFilename: '/tmp/boardSessionStore.json'})})
+  , express.session({secret: config.session.secret, store: new FileStore({storeFilename: '/tmp/boardSessionStore.json'})})
   , express.bodyParser()
   , form({keepExtensions: true})
   , express.methodOverride()
