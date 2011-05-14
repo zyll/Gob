@@ -670,40 +670,6 @@ Sticky.prototype.remove = function(cb) {
     }
 }
 
-/**
- * -------------- old stuff
- */
-var Board = function(){}
-
-Board.prototype.all = function(cb) {
-    var self = this
-
-    this.db.view('stacks/all',
-                 {startkey: [this.slug], endkey: [this.slug, {}]},
-                 function(err, res) {
-        if(err || res.length == 0) {
-            cb(err, res)
-        } else {
-            cb(err, res.map(function(stack) {
-                var s = new Stack(self.db, stack)
-                self.add(s)
-                return s
-            }))
-        }
-    })
-}
-
-Board.prototype.add = function(stack) {
-    stack.board = this
-    return this
-}
-
-
-
-
-Board.prototype.include = function() {
-    return {slug: this.slug}
-}
 /**  
  * Purge 'deploy' stack, backup it, save the board
  * @todo be awar about repos exist.
