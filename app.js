@@ -523,8 +523,6 @@ model.createDB(function(err, res) {
 
 function boardSocket(client, req, res) {
 
-    console.log('wooooooooooooooooooooooooot')
-
     var listen_board = null,
         listen_func = null
     
