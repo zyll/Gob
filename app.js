@@ -283,7 +283,8 @@ var server = express.createServer(
          * @return 404 Not found, board or stack doesn't exist.
          */
         app.post('/board/:board/stack/:stack/sticky', function(req, res, next) {
-            if(req.session.user) {
+
+            if(req.session.user && req.body.title && req.body.title.length > 0) {
                 new model.User(req.session.user)
                     .can(new model.Board({slug: escape(req.params.board)}), 2)
                     .accept(function() {
@@ -322,7 +323,7 @@ var server = express.createServer(
          * @return 500 On fail to save.
          */
         app.post('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
-            if(req.session.user) {
+            if(req.session.user && req.body.title && req.body.title.length > 0) {
                 new model.User(req.session.user)
                     .can(new model.Board({slug: escape(req.params.board)}), 2)
                     .accept(function() {
