@@ -19,6 +19,7 @@ var config = require('./config')
 var model = new Model({name: config.db.name})
   , event = new EventEmitter()
 
+
 var server = express.createServer(
     socketIO( function () { return server }, boardSocket)
   , express.static(__dirname + '/public')
@@ -94,7 +95,7 @@ var server = express.createServer(
                     if(!err && user && user.password == req.body.password) {
                         req.session.user = user
                         res.redirect('/')
-                    } else res.send(401)
+                    } else throw new Unautorized
                 })
             } else res.render('user/login')
         })
@@ -110,7 +111,7 @@ var server = express.createServer(
         app.get('/board', function(req, res, next) {
             if(req.session.user) {
                 res.render('boards/form')
-            } else res.send(401)
+            } else throw new Unauthorized
         })
 
         /**
@@ -119,7 +120,7 @@ var server = express.createServer(
          * @return 302 Redirect on created, content-location headers point to the new board.
          */
         app.post('/board', function(req, res, next) {
-            if(req.session.user){
+            if(req.session.user) {
                 var user = new model.User(req.session.user)
                 new model.Board({name: req.param('name')})
                     .authorize(user, 3)
@@ -127,7 +128,7 @@ var server = express.createServer(
                         event.emit('board:new', board)
                         res.redirect(board.url())
                     })
-            } else res.send(401)
+            } else {throw new Unauthorized}
         })
 
         /**
@@ -146,8 +147,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -165,8 +166,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -187,8 +188,8 @@ var server = express.createServer(
                                 .save(function() { res.redirect(board.url() + '/users') })
                              })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -208,8 +209,8 @@ var server = express.createServer(
                                 }
                             })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -234,8 +235,8 @@ var server = express.createServer(
                                 }
                             })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -254,8 +255,8 @@ var server = express.createServer(
                                 } else res.send(404)
                              })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -273,8 +274,8 @@ var server = express.createServer(
                                 } else res.send(404)
                             })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -312,8 +313,8 @@ var server = express.createServer(
                                 } else return res.send(404)
                             })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -344,8 +345,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { res.send(401 )})
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -377,8 +378,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { res.send(401 )})
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -417,8 +418,8 @@ var server = express.createServer(
                                 } else res.send(404)
                             })
                     })
-                    .refuse(function() { res.send(401 )})
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -446,8 +447,8 @@ var server = express.createServer(
                                 })
                             })
                      })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
         
         /**
@@ -472,8 +473,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -500,8 +501,8 @@ var server = express.createServer(
                                 })
                             })
                      })
-                    .refuse(function() { res.send(401) })
-            } else res.send(401)
+                    .refuse(function() { throw new Unautorized })
+            } else throw new Unautorized
         })
 
         /**
@@ -515,6 +516,21 @@ var server = express.createServer(
     }) 
 )
 server.set('view engine', 'jade')
+
+function Unauthorized() {
+    Error.call(this)
+    Error.captureStackTrace(this, arguments.callee)
+}
+
+Unauthorized.prototype.__proto__ = Error.prototype
+
+server.error(function(err, req, res, next){
+    if (err instanceof Unauthorized) {
+        res.render('401', {status: 401, locals: {user: null}})
+    } else {
+        next(err)
+    }
+});
 
 model.createDB(function(err, res) {
     server.listen(config.server.port, config.server.host)
