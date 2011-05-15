@@ -45,7 +45,7 @@ article section .user ul li:nth-child(n) { transform: rotate(6deg); -webkit-tran
 article section .user ul li:nth-child(2n) { transform: rotate(-6deg); -webkit-transform: rotate(-6deg); -moz-transform: rotate(-6deg); }
 article section .user ul li a { display: none; }
 article section .user ul li:hover a { display: block; position: absolute; top: -40px; right: 0; padding: 0 3px; background: #000; font: bold 12px Arial; color: #FFF; }
-ne
+
 /* tools */
 aside { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: rgba(0, 0, 0, 0.7); }
 aside ul { text-align: center; }
@@ -61,9 +61,6 @@ body > section ul.board li.stack ul.stickyContainer { padding: 40px 0 70px 0; }
 /*ul li article { position: relative; width: 250px; min-height: 100px; margin: 0; padding: 5px; background: #FFF; -webkit-box-shadow: 0 2px 12px rgba(0,0,0,.5); -moz-box-shadow: 0 2px 12px rgba(0,0,0,.5); box-shadow: 0 1px 2px #000; -webkit-transform: rotate(-.5deg); -moz-transform: rotate(-.5deg); -o-transform: rotate(-.5deg); }
 ul li article:nth-child(even) { -webkit-transform: rotate(.5deg); -moz-transform: rotate(.5deg); }*/
 
-
-body > section ul.trash { display: inline-block; width: 32.5%; min-height: 480px; vertical-align: top; background: url('/images/separator.png') right 0 repeat-y; }
-
 ul li article { -webkit-transform: scale(0.7); }
 ul li.ui-sortable-helper article:hover { -webkit-transform: scale(1); z-index: 2000; }
 /*ul li article:hover { -webkit-transform: scale(1.5); z-index: 2000; }*/
@@ -71,13 +68,16 @@ ul li.ui-sortable-helper article:hover { -webkit-transform: scale(1); z-index: 2
 #tplStickyForm { display: none; }
 #tplSticky { display: none; }
 
-section.trash.stack ul { display: inline-block; width: 48px; height: 48px; background-image: url(/images/trash.png); }
+aside section { display: inline-block; width: 33%;}
+aside section.users ul { display: inline; }
+aside section a.users { display: inline-block; width: 48px; height: 48px; background-image: url(/images/users.png); }
+aside section.tools ul { display: inline; width: 48px; height: 48px; }
+aside section.tools section.trash.stack ul { display: inline-block; width: 48px; height: 48px; background-image: url(/images/trash.png); }
 #socketState { display: inline-block; width: 30px; height: 30px; }
 .disconnect { background-image: url(/images/disconnect.png); }
 .connect { background-image: url(/images/connect.png); }
 .folderAdd { display: inline-block; width: 48px; height: 48px; background-image: url(/images/folder.png); }
 .stickyAdd { display: inline-block; width: 48px; height: 48px; background-image: url(/images/sticky.png); }
-aside ul li a.users { display: inline-block; width: 48px; height: 48px; background-image: url(/images/users.png); }
 li.rights { display: inline-block; width: 30px; height: 30px; } 
 li.rights.read { background-image: url(/images/read.png); }
 li.rights.write { background-image: url(/images/write.png); }
@@ -89,4 +89,3 @@ li.user ul {display: inline;}
 li.user ul li {display: inline;}
 
 form span.error { display: inline; font: normal 12px Arial; color: red; }
-

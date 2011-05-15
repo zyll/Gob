@@ -8,17 +8,21 @@ section
 - if (board.stacks.length && rights >= 2)
   section#tplStickyForm!= partial('../stickies/form', {stack: board.stacks[0], rights: rights})
 section#tplSticky!= partial('../stickies/item', {rights: rights, sticky: null})
-section.users
-  ul!= partial('users/gallery', {users: board.allow.users})
-section.trash.stack
-  ul
-    li
 aside
-  ul
-    li: a.users(href: board.url() + '/users', title: "Users list")
-    - if (rights >= 2)
+  section.users
+    ul!= partial('users/gallery', {users: board.allow.users})
+    a.users(href: board.url() + '/users', title: "Users list")
+  section.tools
+    ul
+      - if (rights >= 2)
         li: a.folderAdd(href: board.url() + '/stack', title: "Add stack")
-    - if (board.stacks.length && rights >= 2)
-      li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
-    li.disconnect#socketState
-    li!= partial('users/rights', {item_rights: rights})
+        li
+          section.trash.stack
+            ul
+              li
+      - if (board.stacks.length && rights >= 2)
+          li: a#addSticky.stickyAdd(href: board.stacks[0].url() + '/sticky', title: 'New stickies')
+  section.state
+    ul
+      li.disconnect#socketState
+      li!= partial('users/rights', {item_rights: rights})
