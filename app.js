@@ -20,6 +20,7 @@ var config = require('./config')
 var model = new Model({name: config.db.name})
   , event = new EventEmitter()
 
+var UserForm = require('./forms/user') 
 
 var server = express.createServer(
     socketIO( function () { return server }, boardSocket)
@@ -53,9 +54,15 @@ var server = express.createServer(
             if(req.session.user) {
                 new model.Board()
                     .knownBy(req.session.user.nick, function(err, boards) {
-                        res.render('user/item', {locals: {boards: boards, user: new model.User(req.session.user)}})
+                        res.render('user/item', {locals: {
+                            boards: boards,
+                            user: new model.User(req.session.user)}})
                     })
-            } else res.render('user/form', {user: null})
+            } else res.render('user/form', {locals: {
+                user: null,
+                form: UserForm.fit({})
+
+            }})
         })
 
         /**
@@ -65,7 +72,8 @@ var server = express.createServer(
          */
         app.post('/user', function(req, res, next) {
             req.form.complete(function(err, fields, files) {
-                if(fields.nick && fields.password && fields.confirm && fields.password == fields.confirm) {
+                var form = UserForm.fit(fields).validate()
+                if(form.ok) {
                         var user = new model.User({
                             nick: fields.nick
                           , password: fields.password})
@@ -81,7 +89,7 @@ var server = express.createServer(
                                     }, function(err, stdout, stderr) {})
                                 }
                             })
-                } else res.render('user/form')
+                } else res.render('user/form', {status: 400, locals: {user: null, form: form}})
             })
         })
 
@@ -525,11 +533,7 @@ server.set('view engine', 'jade')
 
 function Unauthorized(msg) {
     this.name = "Unauthorized"
-    msg = 'prout'
-    console.log('me')
-    Error.call(this, msg)
-    //Error.captureStackTrace(this, arguments.callee)
-    console.log('it')
+    Error.call(this)
 }
 
 sys.inherits(Unauthorized, Error)

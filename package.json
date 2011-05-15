@@ -6,13 +6,15 @@
     "cradle": "",
     "futures": "",
     "connect-form": "",
+    "JSV": "",
     "socket.io-connect": "",
     "imagemagick": ""
   },
   "directories": {
-    "data": "./boards",
-    "template": "./jade",
+    "libs": "./libs"
     "static": "./public"
+    "forms": "./forms"
+    "views": "./views"
   },
   "name": "board",
   "author": "Shaka & Zyll <contact@af83.com>",

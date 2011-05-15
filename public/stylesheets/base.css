@@ -88,5 +88,5 @@ li.user {display: inline;}
 li.user ul {display: inline;}
 li.user ul li {display: inline;}
 
-
+form span.error { display: inline; font: normal 12px Arial; color: red; }
 

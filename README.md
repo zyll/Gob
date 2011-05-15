@@ -22,6 +22,8 @@ Feel free to feedback.
     need npm
     need imagemagick
     npm bundle .
+    // JVS is not published for now, so we must git clone it in node_modules.
+    cd node_modules; git clone https://github.com/garycourt/JSV.git
 
 # run
 

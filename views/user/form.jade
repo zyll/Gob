@@ -4,10 +4,13 @@ section
     fieldset
       p: label nickname
         input(type: 'text', name: 'nick')
+        !=partial('form_error', {msg: form.fail.nick})
       p: label password
         input(type: 'password', name: 'password')
+        !=partial('form_error', {msg: form.fail.password})
       p: label confirm password
         input(type: 'password', name: 'confirm')
+        !=partial('form_error', {msg: form.fail.confirm})
       p: label avatar
         input(type: 'file', name: 'avatar')
     button(type: 'submit') Register
