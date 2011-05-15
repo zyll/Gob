@@ -120,7 +120,7 @@ var server = express.createServer(
         app.get('/board', function(req, res, next) {
             if(req.session.user) {
                 res.render('boards/form')
-            } else throw new Unauthorized
+            } else unauthorized(req, res)
         })
 
         /**
@@ -137,7 +137,7 @@ var server = express.createServer(
                         event.emit('board:new', board)
                         res.redirect(board.url())
                     })
-            } else {throw new Unauthorized}
+            } else {unauthorized(req, res)}
         })
 
         /**
@@ -156,8 +156,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() {unauthorized(req, res)})
+            } else unauthorized(req, res)
         })
 
         /**
@@ -175,8 +175,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -197,8 +197,8 @@ var server = express.createServer(
                                 .save(function() { res.redirect(board.url() + '/users') })
                              })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -218,8 +218,8 @@ var server = express.createServer(
                                 }
                             })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -244,8 +244,8 @@ var server = express.createServer(
                                 }
                             })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -264,8 +264,8 @@ var server = express.createServer(
                                 } else res.send(404)
                              })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -283,8 +283,8 @@ var server = express.createServer(
                                 } else res.send(404)
                             })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -322,8 +322,8 @@ var server = express.createServer(
                                 } else return res.send(404)
                             })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -354,8 +354,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -387,8 +387,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -427,8 +427,8 @@ var server = express.createServer(
                                 } else res.send(404)
                             })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -456,8 +456,8 @@ var server = express.createServer(
                                 })
                             })
                      })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
         
         /**
@@ -482,8 +482,8 @@ var server = express.createServer(
                             } else res.send(404)
                         })
                     })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -510,8 +510,8 @@ var server = express.createServer(
                                 })
                             })
                      })
-                    .refuse(function() { throw new Unauthorized })
-            } else throw new Unauthorized
+                    .refuse(function() { unauthorized(req, res) })
+            } else unauthorized(req, res)
         })
 
         /**
@@ -531,20 +531,11 @@ var server = express.createServer(
 
 server.set('view engine', 'jade')
 
-function Unauthorized(msg) {
-    this.name = "Unauthorized"
-    Error.call(this)
+function unauthorized(req, res) {
+    res.render('401', {status: 401, locals: {user: req.session.user || null}})
+            
 }
 
-sys.inherits(Unauthorized, Error)
-
-server.error(function(err, req, res, next) {
-    if (err instanceof Unauthorized) {
-        res.render('401', {status: 401, locals: {user: null}})
-    } else {
-        next(err)
-    }
-});
 server.error(function(err, req, res) {
     console.log(err.stack)
     res.render('500', {
