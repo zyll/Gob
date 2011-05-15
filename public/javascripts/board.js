@@ -21,11 +21,17 @@ Board.prototype.connectStack = function() {
     this.inMove = null;
     $(res).sortable({
         connectWith: res,
-        cursorAt: {top: 5, left: 5},
+        tolerance: 'pointer',
+        over: function(event, ui) {
+            self.getStack($(this).data('slug')).element.addClass('lighter');
+        },
+        out: function(event, ui) {
+            self.getStack($(this).data('slug')).element.removeClass('lighter');
+        },
         remove: function(event, ui) {
             var stack = self.getStack($(this).data('slug'));
             var sticky = stack.getSticky($(ui.item).find('article.sticky').data('slug'));
-            self.inMove = { from: stack, sticky: sticky};
+            self.inMove = { from: stack, sticky: sticky };
         },
         receive: function(event, ui) {
             var sticky = self.inMove.sticky;

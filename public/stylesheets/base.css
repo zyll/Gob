@@ -51,7 +51,7 @@ aside { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; backgrou
 aside ul { text-align: center; }
 aside ul li { display: inline; }
 
-
+li.stack.lighter > ul.stickyContainer{ background: #f6f6f6; }
 
 body > section ul.board { display: block; width: 100%; margin: 0 auto; }
 body > section ul.board > li { display: inline-block; width: 300px; min-height: 480px; vertical-align: top; background: url('/images/separator.png') right 0 repeat-y; }
