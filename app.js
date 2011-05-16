@@ -11,9 +11,9 @@ var http    = require('http')
   , sys     = require('sys')
   , im      = require('imagemagick') 
   , FileStore = require('./models/file-session')
-  , Model = require('./models/board')
+  , Model   = require('./models/board')
   , EventEmitter = require('events').EventEmitter
-
+  , GroupEvent = require('./libs/group-event')
 
 var config = require('./config')
 
@@ -548,77 +548,55 @@ model.createDB(function(err) {
     console.log('up and ready on http://'+config.server.host+':'+config.server.port)
 })
 
-
 function boardSocket(client, req, res) {
 
-    var listen_board = null,
-        listen_func = null
-    
-    var stickyNew = function(sticky, rev) {
+    var listen_board = null
+
+    var groupevent = new GroupEvent(event)
+    groupevent.on('sticky:new', function(sticky, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:new', sticky: sticky.asData(), rev: rev})
         }
-    }
-    var stickyUpdate = function(sticky, rev) {
+    })
+    .on('sticky:update', function(sticky, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:update', sticky: sticky.asData(), rev: rev})
         }
-    }
-
-    var stickyMove = function(sticky, from, at, rev) {
+    })
+    .on('sticky:move', function(sticky, from, at, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:move', sticky: sticky.asData(), from: from.asData(), at: at, rev: rev})
         }
-    }
-
-    var stickyRemove = function(sticky, rev) {
+    })
+    .on('sticky:remove', function(sticky, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:remove', sticky: sticky, rev: rev})
         }
-    }
-
-    var stickyUserAdd = function(sticky, user, rev) {
+    })
+    .on('sticky:user:add', function(sticky, user, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:user:add', sticky: sticky.asData(), user: user, rev: rev})
         }
-    }
-
-    var stickyUserRemove = function(sticky, user, rev) {
+    })
+    .on('sticky:user:remove', function(sticky, user, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:user:remove', sticky: sticky.asData(), user: user, rev: rev})
         }
-    }
+    })
 
     client.on('message', function(message){
         // client can change the listenned board.
         if(message.board && listen_board != message.board) {
             listen_board = message.board
             if(listen_board) {
-                event.removeListener('sticky:new', stickyNew)
-                event.removeListener('sticky:update', stickyUpdate)
-                event.removeListener('sticky:move', stickyMove)
-                event.removeListener('sticky:remove', stickyRemove)
-                event.removeListener('sticky:user:add', stickyUserAdd)
-                event.removeListener('sticky:user:remove', stickyUserRemove)
+                groupevent.stop()
             }
             listen_board = message.board
-            
-            event.on('sticky:new', stickyNew)
-            event.on('sticky:update', stickyUpdate)
-            event.on('sticky:move', stickyMove)
-            event.on('sticky:remove', stickyRemove)
-            event.on('sticky:user:add', stickyUserAdd)
-            event.on('sticky:user:remove', stickyUserRemove)
+            groupevent.start()
         }
     })
 
     client.on('disconnect', function(){
-        var listen_board = null
-        event.removeListener('sticky:new', stickyNew)
-        event.removeListener('sticky:update', stickyUpdate)
-        event.removeListener('sticky:move', stickyMove)
-        event.removeListener('sticky:remove', stickyRemove)
-        event.removeListener('sticky:user:add', stickyUserAdd)
-        event.removeListener('sticky:user:remove', stickyUserRemove)
+        groupevent.stop()
     })
 }
