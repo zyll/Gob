@@ -11,9 +11,9 @@
     "imagemagick": ""
   },
   "directories": {
-    "libs": "./libs"
-    "static": "./public"
-    "forms": "./forms"
+    "libs": "./libs",
+    "static": "./public",
+    "forms": "./forms",
     "views": "./views"
   },
   "name": "board",

@@ -24,6 +24,10 @@ Feel free to feedback.
     npm bundle .
     // JVS is not published for now, so we must git clone it in node_modules.
     cd node_modules; git clone https://github.com/garycourt/JSV.git
+    // socket.io-connect as a npm papckage looks like not uptodate so using
+    // a fork from  kazuyukitanimura will avoid some backtrace.
+    cd node_modules; rm socket.io-connect -fr; git clone https://github.com/kazuyukitanimura/Socket.IO-connect.git;
+    cd node_modules/socket.io-connect; npm install;
 
 # run
 

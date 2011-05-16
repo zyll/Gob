@@ -523,9 +523,6 @@ var server = express.createServer(
             res.send(501)
         })
         
-        app.get('*', function(req, res) {
-            res.send('Not Found', 404)
-        })
     })
 )
 
