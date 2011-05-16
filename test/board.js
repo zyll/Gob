@@ -34,7 +34,7 @@ vows.describe('Model.Board').addBatch({
                     assert.ok(board.id)
                 },
                 'it shoud have a slug': function(err, board, model) {
-                    assert.equal(board.slug, 'board-123%E9')
+                    assert.equal(board.slug, 'board%20123%C3%A9')
                 }
             }
         }

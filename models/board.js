@@ -34,7 +34,7 @@ function Slugify(obj, prop) {
 
     obj.prototype.slugging = function(ns, cb) {
         var self = this
-          , slug = escape(this[prop].substring(0, 10)).replace(/\%20/g, '-')
+          , slug = encodeURIComponent(this[prop].substring(0, 10))
           , base_slug = slug
           , acc = 0
           , find_it = function() {

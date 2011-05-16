@@ -147,10 +147,10 @@ var server = express.createServer(
         app.get('/board/:board', function(req, res, next) {
             if(req.session.user) {
                 var user = new model.User(req.session.user)
-                user.can(new model.Board({slug: escape(req.params.board)}), 1)
+                user.can(new model.Board({slug: encodeURIComponent(req.params.board)}), 1)
                     .accept(function(level) {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                             if(!err && board) {
                                 res.render('boards/item', {locals: {board: board, user: user, rights: level}, layout: 'boards/layout'})
                             } else res.send(404)
@@ -167,9 +167,9 @@ var server = express.createServer(
         app.get('/board/:board/users', function(req, res, next) {
             if(req.session.user) {
                 var user = new model.User(req.session.user)
-                user.can(new model.Board({slug: escape(req.params.board)}), 1)
+                user.can(new model.Board({slug: encodeURIComponent(req.params.board)}), 1)
                     .accept(function(rights) {
-                        new model.Board().get(escape(req.params.board), function(err, board) {
+                        new model.Board().get(encodeURIComponent(req.params.board), function(err, board) {
                             if(!err && board) {
                                 res.render('boards/users/edit', {locals: {board: board, rights: rights, user: user}})
                             } else res.send(404)
@@ -187,12 +187,12 @@ var server = express.createServer(
         app.post('/board/:board/users', function(req, res, next) {
             if(req.session.user) {
                 var user = new model.User(req.session.user)
-                user.can(new model.Board({slug: escape(req.params.board)}), 3)
+                user.can(new model.Board({slug: encodeURIComponent(req.params.board)}), 3)
                     .accept(function() {
                         if(user.nick == req.body.nick) { // avoid removing admin on herself
                             return res.send(302)
                         }
-                        new model.Board().get(escape(req.params.board), function(err, board) {
+                        new model.Board().get(encodeURIComponent(req.params.board), function(err, board) {
                             board.authorize({nick: req.body.nick}, parseInt(req.body.level))
                                 .save(function() { res.redirect(board.url() + '/users') })
                              })
@@ -208,10 +208,10 @@ var server = express.createServer(
         app.get('/board/:board/stack', function(req, res, next) {
             if(req.session.user) {
                 var user = new model.User(req.session.user)
-                user.can(new model.Board({slug: escape(req.params.board)}), 2)
+                user.can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function(rights) {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                                 if(err || !board) res.send(404)
                                 else {
                                     res.render('stacks/form', {locals: {board: board, user: user, rights: rights}})
@@ -230,10 +230,10 @@ var server = express.createServer(
         app.post('/board/:board/stack', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function() {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                                 if(err || !board) res.send(404)
                                 else {
                                     board.stacksAdd(new model.Stack({name: req.body.name}))
@@ -255,10 +255,10 @@ var server = express.createServer(
         app.get('/board/:board/stack/:stack', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 1)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 1)
                     .accept(function(rights) {
-                        new model.Stack({parent:{slug: escape(req.params.board)}})
-                            .get(escape(req.params.stack), function(err, stack) {
+                        new model.Stack({parent:{slug: encodeURIComponent(req.params.board)}})
+                            .get(encodeURIComponent(req.params.stack), function(err, stack) {
                                 if(!err && stack) {
                                     res.render('stacks/item.jade', {locals: {stack: stack, rights: rights}})
                                 } else res.send(404)
@@ -274,10 +274,10 @@ var server = express.createServer(
         app.get('/board/:board/stack/:stack/sticky', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function(rights) {
-                        new model.Stack({parent: {slug: escape(req.params.board)}})
-                            .get(escape(req.params.stack), function(err, stack) {
+                        new model.Stack({parent: {slug: encodeURIComponent(req.params.board)}})
+                            .get(encodeURIComponent(req.params.stack), function(err, stack) {
                                 if(!err && stack) {
                                     res.render('stickies/form', {locals: {stack: stack, rights: rights}, layout: req.isXMLHttpRequest})
                                 } else res.send(404)
@@ -296,12 +296,12 @@ var server = express.createServer(
 
             if(req.session.user && req.body.title && req.body.title.length > 0) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function() {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                                 if(!err && board) {
-                                    var stack = board.stacksGet(escape(req.params.stack))
+                                    var stack = board.stacksGet(encodeURIComponent(req.params.stack))
                                     if(!stack) {
                                         return res.send(404)
                                     }
@@ -335,14 +335,14 @@ var server = express.createServer(
         app.post('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
             if(req.session.user && req.body.title && req.body.title.length > 0) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function() {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                             if(!err && board) {
-                                var stack = board.stacksGet(escape(req.params.stack))
+                                var stack = board.stacksGet(encodeURIComponent(req.params.stack))
                                 if(!stack) return res.send(404)
-                                var sticky = stack.stickiesGet(escape(req.params.sticky))
+                                var sticky = stack.stickiesGet(encodeURIComponent(req.params.sticky))
                                 if(!sticky)return res.send(404)
                                 sticky.title = req.body.title
                                 sticky.content = req.body.content
@@ -368,14 +368,14 @@ var server = express.createServer(
         app.post('/board/:board/stack/:stack/sticky/:sticky/user', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function() {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                             if(!err && board) {
-                                var stack = board.stacksGet(escape(req.params.stack))
+                                var stack = board.stacksGet(encodeURIComponent(req.params.stack))
                                 if(!stack) return res.send(404)
-                                var sticky = stack.stickiesGet(escape(req.params.sticky))
+                                var sticky = stack.stickiesGet(encodeURIComponent(req.params.sticky))
                                 if(!sticky)return res.send(404)
                                 //fixme hack to map as in board.users.allow for gallery tpl
                                 sticky.user[req.body.user] = 0
@@ -397,7 +397,7 @@ var server = express.createServer(
         app.post('/board/:board/stack/:stack/sticky/:sticky/move', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function() {
                         if(!req.body) {
                             var to_slug = req.params.stack
@@ -437,22 +437,22 @@ var server = express.createServer(
         app.del('/board/:board/stack/:stack/sticky/:sticky/user/:user', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function(rights) {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                                 if(err || !board) return res.send(404)
-                                var stack = board.stacksGet(escape(req.params.stack))
+                                var stack = board.stacksGet(encodeURIComponent(req.params.stack))
                                 if(!stack) return res.send(404)
-                                var sticky = stack.stickiesGet(escape(req.params.sticky))
+                                var sticky = stack.stickiesGet(encodeURIComponent(req.params.sticky))
                                 if(!sticky) return res.send(404)
-                                if(!sticky.user[escape(req.params.user)] && sticky.user[escape(req.params.user)] != 0) {
+                                if(!sticky.user[encodeURIComponent(req.params.user)] && sticky.user[encodeURIComponent(req.params.user)] != 0) {
                                     return res.send(404)
                                 }
-                                delete sticky.user[escape(req.params.user)]
+                                delete sticky.user[encodeURIComponent(req.params.user)]
                                 board.save(function(err) {
                                     res.send(204)
-                                    event.emit('sticky:user:remove', sticky, escape(req.params.user), board.rev)
+                                    event.emit('sticky:user:remove', sticky, encodeURIComponent(req.params.user), board.rev)
                                 })
                             })
                      })
@@ -467,16 +467,16 @@ var server = express.createServer(
         app.get('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 1)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 1)
                     .accept(function(rights) {
                         new model.Sticky({
                             parent: {
-                                slug: escape(req.params.stack),
+                                slug: encodeURIComponent(req.params.stack),
                                 parent: {
-                                    slug: escape(req.params.board)
+                                    slug: encodeURIComponent(req.params.board)
                                 }
                             }
-                        }).get(escape(req.params.sticky), function(err, sticky) {
+                        }).get(encodeURIComponent(req.params.sticky), function(err, sticky) {
                             if(!err && sticky) {
                                 res.render('stickies/item', {locals: {sticky: sticky}, layout: false, rights: rights})
                             } else res.send(404)
@@ -493,14 +493,14 @@ var server = express.createServer(
         app.del('/board/:board/stack/:stack/sticky/:sticky', function(req, res, next) {
             if(req.session.user) {
                 new model.User(req.session.user)
-                    .can(new model.Board({slug: escape(req.params.board)}), 2)
+                    .can(new model.Board({slug: encodeURIComponent(req.params.board)}), 2)
                     .accept(function(rights) {
                         new model.Board()
-                            .get(escape(req.params.board), function(err, board) {
+                            .get(encodeURIComponent(req.params.board), function(err, board) {
                                 if(err || !board) return res.send(404)
-                                var stack = board.stacksGet(escape(req.params.stack))
+                                var stack = board.stacksGet(encodeURIComponent(req.params.stack))
                                 if(!stack) return res.send(404)
-                                var sticky = stack.stickiesGet(escape(req.params.sticky))
+                                var sticky = stack.stickiesGet(encodeURIComponent(req.params.sticky))
                                 if(!sticky) return res.send(404)
                                 var data  = sticky.asData()
                                 stack.stickiesRemove(sticky)
