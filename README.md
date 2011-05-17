@@ -22,8 +22,6 @@ Feel free to feedback.
     need npm
     need imagemagick
     npm bundle .
-    // JVS is not published for now, so we must git clone it in node_modules.
-    cd node_modules; git clone https://github.com/garycourt/JSV.git
     // socket.io-connect as a npm papckage looks like not uptodate so using
     // a fork from  kazuyukitanimura will avoid some backtrace.
     cd node_modules; rm socket.io-connect -fr; git clone https://github.com/kazuyukitanimura/Socket.IO-connect.git;
