@@ -21,13 +21,14 @@ var model = new Model({name: config.db.name})
   , event = new EventEmitter()
 
 var UserForm = require('./forms/user') 
+var BoardRightForm = require('./forms/board-right') 
 
 var server = express.createServer(
-    socketIO( function () { return server }, boardSocket)
-  , express.static(__dirname + '/public')
+    express.static(__dirname + '/public')
   , express.logger()
   , express.cookieParser()
   , express.session({secret: config.session.secret, store: new FileStore({storeFilename: '/tmp/boardSessionStore.json'})})
+  , socketIO( function () { return server }, boardSocket)
   , express.bodyParser()
   , form({keepExtensions: true})
   , express.methodOverride()
@@ -186,18 +187,26 @@ var server = express.createServer(
          */
         app.post('/board/:board/users', function(req, res, next) {
             if(req.session.user) {
-                var user = new model.User(req.session.user)
-                user.can(new model.Board({slug: encodeURIComponent(req.params.board)}), 3)
-                    .accept(function() {
-                        if(user.nick == req.body.nick) { // avoid removing admin on herself
-                            return res.send(302)
-                        }
-                        new model.Board().get(encodeURIComponent(req.params.board), function(err, board) {
-                            board.authorize({nick: req.body.nick}, parseInt(req.body.level))
-                                .save(function() { res.redirect(board.url() + '/users') })
-                             })
-                    })
-                    .refuse(function() { unauthorized(req, res) })
+                var form = BoardRightForm.fit(req.body).validate()
+                if(form.ok) {
+                    var user = new model.User(req.session.user)
+                    user.can(new model.Board({slug: encodeURIComponent(req.params.board)}), 3)
+                        .accept(function() {
+                            if(user.nick == req.body.nick) { // avoid removing admin on herself
+                                return res.send(302)
+                            }
+                            new model.Board().get(encodeURIComponent(req.params.board), function(err, board) {
+                                board.authorize({nick: req.body.nick}, parseInt(req.body.level))
+                                    .save(function() {
+                                        event.emit('board:user', board.slug, req.body.nick, parseInt(req.body.level), board.rev)
+                                        res.redirect(board.url() + '/users')
+                                    })
+                                 })
+                        })
+                        .refuse(function() { unauthorized(req, res) })
+                } else {
+                    res.send(400)
+                }
             } else unauthorized(req, res)
         })
 
@@ -581,6 +590,11 @@ function boardSocket(client, req, res) {
     .on('sticky:user:remove', function(sticky, user, rev) {
         if(sticky.parent.parent.slug == listen_board) {
             client.send({event: 'sticky:user:remove', sticky: sticky.asData(), user: user, rev: rev})
+        }
+    })
+    .on('board:user', function(board, user, level, rev) {
+        if(board == listen_board) {
+            client.send({event: 'user', user: user, level: level, rev: rev})
         }
     })
 

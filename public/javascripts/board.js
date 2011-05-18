@@ -181,7 +181,6 @@ function Ticket(element, stack) {
 }
 
 Ticket.prototype.removeUser = function(user) {
-    console.log(this);
     $.ajax({
         url: ["/board", this.stack.board.name,
             "stack", this.stack.slug,
@@ -259,12 +258,27 @@ Ticket.prototype.setContent = function(element) {
 function UserList(element) {
     var self = this;
     this.element = element;
-    this.users_elements = $(this.element).find('li.user');
 }
 
 
+UserList.prototype.getUser = function(nick) {
+    var find = null;
+    $(this.element).find('li.user').each(function() {
+        if($(this).find('img').attr('title') == nick) {
+            find = $(this);
+        }
+    });
+    return find;
+}
+
+UserList.prototype.addUser = function(nick) {
+    if(!this.getUser(nick)) {
+        this.element.find('ul').append('<li class="user"><img title="'+ nick +'" src="/avatar/'+ nick +'.png"></li>');
+    }
+}
+
 UserList.prototype.dragabbleTo = function(element) {
-    $(this.users_elements).draggable({
+    $(this.element).find('li.user').draggable({
         cursorAt: {top: 5, left: 5},
         helper: 'clone',
         revert: 'invalid'
@@ -307,8 +321,9 @@ $(document).ready( function() {
                 });
             });
             
-            board.userList(new UserList($('section.users')));
         }
+        var usersList = new UserList($('section.users'));
+        board.userList(usersList);
 
         var socket = new io.Socket();
         socket.connect();
@@ -353,7 +368,6 @@ $(document).ready( function() {
                         }
                         break;
                     case 'sticky:user:remove':
-                        console.log('sticky user remove');
                         var from = board.getStack(msg.sticky.parent.slug);
                         var sticky = from.getSticky(msg.sticky.slug);
                         if($.inArray(msg.user, sticky.user) >= 0) {
@@ -361,7 +375,15 @@ $(document).ready( function() {
                             sticky.user.splice($.inArray(sticky.user[msg.user]), 1);
                         }
                         break;
-}
+                    case 'user':
+                        if(parseInt(msg.level) == 0) {
+                            usersList.getUser(msg.user).remove();
+                        } else {
+                            usersList.addUser(msg.user);
+                            board.refreshAcceptUsers();
+                        }
+                        break;
+                }
                 board.rev = msg.rev; // updating board current rev.
             } else {
             }
